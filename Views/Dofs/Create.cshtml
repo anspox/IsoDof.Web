@@ -1,0 +1,64 @@
+@model IsoDof.Web.Models.Entities.Dof
+
+@{
+    ViewData["Title"] = "Yeni DÖF";
+}
+
+<h1>Yeni DÖF</h1>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-group">
+        <label asp-for="Title" class="control-label">Başlık</label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Description" class="control-label">Açıklama</label>
+        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Type" class="control-label">Tür</label>
+        <select asp-for="Type" asp-items="Html.GetEnumSelectList<IsoDof.Web.Models.Entities.Enums.DofType>()" class="form-control"></select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Source" class="control-label">Kaynak</label>
+        <select asp-for="Source" asp-items="Html.GetEnumSelectList<IsoDof.Web.Models.Entities.Enums.DofSource>()" class="form-control"></select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="DepartmentId" class="control-label">Departman</label>
+        <select asp-for="DepartmentId" asp-items="ViewBag.Departments" class="form-control">
+            <option value="">-- Seçiniz --</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="CreatedByUserId" class="control-label">Açan Kişi</label>
+        <select asp-for="CreatedByUserId" asp-items="ViewBag.Users" class="form-control">
+            <option value="">-- Seçiniz --</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="AssignedToUserId" class="control-label">Atanan Kişi (opsiyonel)</label>
+        <select asp-for="AssignedToUserId" asp-items="ViewBag.Users" class="form-control">
+            <option value="">-- Atanmadı --</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="DueDate" class="control-label">Son Tarih</label>
+        <input asp-for="DueDate" class="form-control" type="date" />
+    </div>
+
+    <div class="form-group mt-3">
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+        <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
+    </div>
+</form>

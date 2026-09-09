@@ -1,0 +1,37 @@
+@model IEnumerable<IsoDof.Web.Models.Entities.Dof>
+
+@{
+    ViewData["Title"] = "DÖF Kayıtları";
+}
+
+<h1>DÖF Kayıtları</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Yeni DÖF</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Başlık</th>
+            <th>Tür</th>
+            <th>Durum</th>
+            <th>Departman</th>
+            <th>Atanan</th>
+            <th>Gecikmiş mi?</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var dof in Model)
+        {
+            <tr class="@(dof.IsOverdue ? "table-danger" : "")">
+                <td>@dof.Title</td>
+                <td>@dof.Type</td>
+                <td>@dof.Status</td>
+                <td>@(dof.Department?.Name ?? "-")</td>
+                <td>@(dof.AssignedToUser?.FullName ?? "-")</td>
+                <td>@(dof.IsOverdue ? "Evet" : "Hayır")</td>
+            </tr>
+        }
+    </tbody>
+</table>

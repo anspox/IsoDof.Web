@@ -27,6 +27,7 @@
                 <td>@user.Email</td>
                 <td>@(user.Department?.Name ?? "-")</td>
                 <td>
+                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
                     <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-outline-danger">Sil</a>
                 </td>
             </tr>

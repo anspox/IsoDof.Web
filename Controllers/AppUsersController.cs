@@ -62,4 +62,33 @@ public class AppUsersController : Controller
         }
         return RedirectToAction(nameof(Index));
     }
+        public async Task<IActionResult> Edit(int id)
+    {
+        var appUser = await _context.AppUsers.FindAsync(id);
+        if (appUser == null)
+        {
+            return NotFound();
+        }
+        ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", appUser.DepartmentId);
+        return View(appUser);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, AppUser appUser)
+    {
+        if (id != appUser.Id)
+        {
+            return NotFound();
+        }
+
+        if (ModelState.IsValid)
+        {
+            _context.Update(appUser);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", appUser.DepartmentId);
+        return View(appUser);
+    }
 }
