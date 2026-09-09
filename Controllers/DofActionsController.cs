@@ -58,4 +58,60 @@ public class DofActionsController : Controller
         }
         return RedirectToAction(nameof(Index));
     }
+        public async Task<IActionResult> Edit(int id)
+    {
+        var dofAction = await _context.DofActions.FindAsync(id);
+        if (dofAction == null)
+        {
+            return NotFound();
+        }
+        ViewBag.Dofs = new SelectList(_context.Dofs, "Id", "Title", dofAction.DofId);
+        ViewBag.Users = new SelectList(_context.AppUsers, "Id", "FullName", dofAction.ResponsibleUserId);
+        return View(dofAction);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, DofAction dofAction)
+    {
+        if (id != dofAction.Id)
+        {
+            return NotFound();
+        }
+
+        if (ModelState.IsValid)
+        {
+            _context.Update(dofAction);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        ViewBag.Dofs = new SelectList(_context.Dofs, "Id", "Title", dofAction.DofId);
+        ViewBag.Users = new SelectList(_context.AppUsers, "Id", "FullName", dofAction.ResponsibleUserId);
+        return View(dofAction);
+    }
+
+    public async Task<IActionResult> Delete(int id)
+    {
+        var dofAction = await _context.DofActions
+            .Include(a => a.Dof)
+            .FirstOrDefaultAsync(a => a.Id == id);
+        if (dofAction == null)
+        {
+            return NotFound();
+        }
+        return View(dofAction);
+    }
+
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var dofAction = await _context.DofActions.FindAsync(id);
+        if (dofAction != null)
+        {
+            _context.DofActions.Remove(dofAction);
+            await _context.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Index));
+    }
 }

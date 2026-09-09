@@ -38,6 +38,8 @@
                     }
                 </td>
                 <td>
+                    <a asp-action="Edit" asp-route-id="@action.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
+                    <a asp-action="Delete" asp-route-id="@action.Id" class="btn btn-sm btn-outline-danger">Sil</a>
                     @if (!action.IsCompleted)
                     {
                         <form asp-action="Complete" asp-route-id="@action.Id" method="post" style="display:inline">

@@ -1,0 +1,25 @@
+@model IsoDof.Web.Models.Entities.DofAction
+
+@{
+    ViewData["Title"] = "Faaliyet Sil";
+}
+
+<h1>Faaliyet Sil</h1>
+
+<h3>Bu faaliyeti silmek istediğine emin misin?</h3>
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-2">DÖF</dt>
+        <dd class="col-sm-10">@(Model.Dof?.Title ?? "-")</dd>
+
+        <dt class="col-sm-2">Açıklama</dt>
+        <dd class="col-sm-10">@Model.Description</dd>
+    </dl>
+
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Evet, Sil</button>
+        <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
+    </form>
+</div>
