@@ -1,0 +1,51 @@
+@model IEnumerable<IsoDof.Web.Models.Entities.DofAction>
+
+@{
+    ViewData["Title"] = "Faaliyet Adımları";
+}
+
+<h1>Faaliyet Adımları</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Yeni Faaliyet</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>DÖF</th>
+            <th>Açıklama</th>
+            <th>Sorumlu</th>
+            <th>Durum</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var action in Model)
+        {
+            <tr>
+                <td>@(action.Dof?.Title ?? "-")</td>
+                <td>@action.Description</td>
+                <td>@(action.ResponsibleUser?.FullName ?? "-")</td>
+                <td>
+                    @if (action.IsCompleted)
+                    {
+                        <span class="badge bg-success">Tamamlandı</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Bekliyor</span>
+                    }
+                </td>
+                <td>
+                    @if (!action.IsCompleted)
+                    {
+                        <form asp-action="Complete" asp-route-id="@action.Id" method="post" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-success">Tamamla</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -19,6 +19,7 @@
             <th>Departman</th>
             <th>Atanan</th>
             <th>Gecikmiş mi?</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -31,6 +32,10 @@
                 <td>@(dof.Department?.Name ?? "-")</td>
                 <td>@(dof.AssignedToUser?.FullName ?? "-")</td>
                 <td>@(dof.IsOverdue ? "Evet" : "Hayır")</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@dof.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
+                    <a asp-action="Delete" asp-route-id="@dof.Id" class="btn btn-sm btn-outline-danger">Sil</a>
+                </td>
             </tr>
         }
     </tbody>
