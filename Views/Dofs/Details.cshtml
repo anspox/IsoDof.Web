@@ -1,0 +1,58 @@
+@model IsoDof.Web.Models.Entities.Dof
+
+@{
+    ViewData["Title"] = "DÖF Detay";
+}
+
+<h1>@Model.Title</h1>
+
+<dl class="row">
+    <dt class="col-sm-2">Açıklama</dt>
+    <dd class="col-sm-10">@Model.Description</dd>
+
+    <dt class="col-sm-2">Tür</dt>
+    <dd class="col-sm-10">@Model.Type</dd>
+
+    <dt class="col-sm-2">Kaynak</dt>
+    <dd class="col-sm-10">@Model.Source</dd>
+
+    <dt class="col-sm-2">Durum</dt>
+    <dd class="col-sm-10">@Model.Status</dd>
+
+    <dt class="col-sm-2">Departman</dt>
+    <dd class="col-sm-10">@(Model.Department?.Name ?? "-")</dd>
+
+    <dt class="col-sm-2">Açan Kişi</dt>
+    <dd class="col-sm-10">@(Model.CreatedByUser?.FullName ?? "-")</dd>
+
+    <dt class="col-sm-2">Atanan Kişi</dt>
+    <dd class="col-sm-10">@(Model.AssignedToUser?.FullName ?? "-")</dd>
+</dl>
+
+<h3>Faaliyet Adımları</h3>
+
+@if (!Model.Actions.Any())
+{
+    <p>Henüz faaliyet eklenmemiş.</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var action in Model.Actions)
+        {
+            <li class="list-group-item">
+                @action.Description — @(action.ResponsibleUser?.FullName ?? "-")
+                @if (action.IsCompleted)
+                {
+                    <span class="badge bg-success">Tamamlandı</span>
+                }
+                else
+                {
+                    <span class="badge bg-warning text-dark">Bekliyor</span>
+                }
+            </li>
+        }
+    </ul>
+}
+
+<a asp-action="Index" class="btn btn-secondary mt-3">Listeye Dön</a>

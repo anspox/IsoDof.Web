@@ -111,4 +111,20 @@ public class DofsController : Controller
         }
         return RedirectToAction(nameof(Index));
     }
+        public async Task<IActionResult> Details(int id)
+    {
+        var dof = await _context.Dofs
+            .Include(d => d.Department)
+            .Include(d => d.CreatedByUser)
+            .Include(d => d.AssignedToUser)
+            .Include(d => d.Actions)
+                .ThenInclude(a => a.ResponsibleUser)
+            .FirstOrDefaultAsync(d => d.Id == id);
+
+        if (dof == null)
+        {
+            return NotFound();
+        }
+        return View(dof);
+    }
 }
