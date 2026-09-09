@@ -3,16 +3,19 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using IsoDof.Web.Data;
 using IsoDof.Web.Models.Entities;
+using IsoDof.Web.Services;
 
 namespace IsoDof.Web.Controllers;
 
 public class DofsController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly IEmailService _emailService;
 
-    public DofsController(AppDbContext context)
+    public DofsController(AppDbContext context, IEmailService emailService)
     {
         _context = context;
+        _emailService = emailService;
     }
 
     public async Task<IActionResult> Index()
@@ -49,13 +52,28 @@ public class DofsController : Controller
         {
             _context.Dofs.Add(dof);
             await _context.SaveChangesAsync();
+
+            if (dof.AssignedToUserId is int notifyId)
+            {
+                var assignedUser = await _context.AppUsers.FindAsync(notifyId);
+                if (assignedUser != null)
+                {
+                    await _emailService.SendEmailAsync(
+                        assignedUser.Email,
+                        $"Yeni DÖF Atandı: {dof.Title}",
+                        $"Merhaba {assignedUser.FullName},\n\n\"{dof.Title}\" başlıklı DÖF kaydı size atandı.\n\nDetaylar için sisteme giriş yapabilirsiniz."
+                    );
+                }
+            }
+
             return RedirectToAction(nameof(Index));
         }
         ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", dof.DepartmentId);
         ViewBag.Users = new SelectList(_context.AppUsers, "Id", "FullName", dof.CreatedByUserId);
         return View(dof);
     }
-        public async Task<IActionResult> Edit(int id)
+
+    public async Task<IActionResult> Edit(int id)
     {
         var dof = await _context.Dofs.FindAsync(id);
         if (dof == null)
@@ -111,7 +129,8 @@ public class DofsController : Controller
         }
         return RedirectToAction(nameof(Index));
     }
-        public async Task<IActionResult> Details(int id)
+
+    public async Task<IActionResult> Details(int id)
     {
         var dof = await _context.Dofs
             .Include(d => d.Department)
