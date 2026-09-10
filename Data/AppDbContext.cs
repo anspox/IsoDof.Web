@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<DofComment> DofComments { get; set; }
     public DbSet<DofAttachment> DofAttachments { get; set; }
     public DbSet<DofStatusHistory> DofStatusHistories => Set<DofStatusHistory>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,5 +85,14 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(d => d.ArchivedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.RecipientUser)
+            .WithMany()
+            .HasForeignKey(n => n.RecipientUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => new { n.RecipientUserId, n.IsRead });
     }
 }

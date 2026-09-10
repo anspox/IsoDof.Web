@@ -19,12 +19,15 @@ public class DofsController : Controller
     private readonly AppDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IDofReportService _reportService;
+    private readonly INotificationService _notifications;
 
-    public DofsController(AppDbContext context, IEmailService emailService, IDofReportService reportService)
+    public DofsController(AppDbContext context, IEmailService emailService,
+        IDofReportService reportService, INotificationService notifications)
     {
         _context = context;
         _emailService = emailService;
         _reportService = reportService;
+        _notifications = notifications;
     }
 
     private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -257,6 +260,14 @@ public class DofsController : Controller
                         $"Merhaba {assignedUser.FullName},\n\n\"{dof.Title}\" başlıklı DÖF kaydı size atandı.\n\nDetaylar için sisteme giriş yapabilirsiniz."
                     );
                 }
+
+                if (notifyId != CurrentUserId)
+                {
+                    await _notifications.NotifyAsync(notifyId,
+                        $"Size yeni bir DÖF atandı: {dof.Title}",
+                        Url.Action(nameof(Details), "Dofs", new { id = dof.Id }),
+                        "assignment");
+                }
             }
 
             return RedirectToAction(nameof(Index));
@@ -331,6 +342,17 @@ public class DofsController : Controller
             }
 
             await _context.SaveChangesAsync();
+
+            if (oldStatus != existing.Status)
+            {
+                await _notifications.NotifyManyAsync(
+                    new int?[] { existing.AssignedToUserId, existing.CreatedByUserId }
+                        .Where(uid => uid != CurrentUserId),
+                    $"DÖF #{existing.Id} durumu güncellendi: {oldStatus} → {existing.Status}",
+                    Url.Action(nameof(Details), "Dofs", new { id = existing.Id }),
+                    "sync_alt");
+            }
+
             return RedirectToAction(nameof(Index));
         }
         ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", dof.DepartmentId);
@@ -366,6 +388,13 @@ public class DofsController : Controller
             dof.ArchivedByUserId = CurrentUserId;
             dof.ArchiveReason = string.IsNullOrWhiteSpace(archiveReason) ? null : archiveReason.Trim();
             await _context.SaveChangesAsync();
+
+            await _notifications.NotifyManyAsync(
+                new int?[] { dof.AssignedToUserId, dof.CreatedByUserId }
+                    .Where(uid => uid != CurrentUserId),
+                $"DÖF #{dof.Id} arşive taşındı: {dof.Title}",
+                Url.Action(nameof(Details), "Dofs", new { id = dof.Id }),
+                "archive");
         }
         return RedirectToAction(nameof(Index));
     }
@@ -449,6 +478,17 @@ public class DofsController : Controller
 
         _context.DofComments.Add(comment);
         await _context.SaveChangesAsync();
+
+        var dof = await _context.Dofs.FindAsync(dofId);
+        if (dof != null)
+        {
+            await _notifications.NotifyManyAsync(
+                new int?[] { dof.AssignedToUserId, dof.CreatedByUserId }
+                    .Where(uid => uid != currentUserId),
+                $"DÖF #{dof.Id} kaydına yeni yorum eklendi",
+                Url.Action(nameof(Details), "Dofs", new { id = dof.Id }),
+                "chat");
+        }
 
         return RedirectToAction(nameof(Details), new { id = dofId });
     }

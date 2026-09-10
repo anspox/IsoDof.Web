@@ -1,0 +1,56 @@
+@model IEnumerable<IsoDof.Web.Models.Entities.Notification>
+@{
+    ViewData["Title"] = "Bildirimler";
+    var unread = Model.Count(n => !n.IsRead);
+}
+
+<div class="flex flex-col w-full gap-space-lg max-w-3xl">
+    <div class="flex items-center justify-between bg-surface-container-low p-space-md rounded-xl border border-outline-variant/20">
+        <div class="flex flex-col gap-space-2xs">
+            <h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">Bildirimler</h1>
+            <span class="font-code-sm text-code-sm text-outline">
+                @Model.Count() bildirim · @unread okunmamış
+            </span>
+        </div>
+        @if (unread > 0)
+        {
+            <form asp-action="MarkAllRead" method="post">
+                <button type="submit"
+                        class="inline-flex items-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-primary px-space-md py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
+                    <span class="material-symbols-outlined text-[1rem]">done_all</span>
+                    <span>Tümünü okundu işaretle</span>
+                </button>
+            </form>
+        }
+    </div>
+
+    <div class="bg-surface-container-low rounded-xl border border-outline-variant/20 overflow-hidden divide-y divide-outline-variant/10">
+        @if (!Model.Any())
+        {
+            <div class="px-space-md py-12 text-center text-on-surface-variant">
+                <span class="material-symbols-outlined text-4xl text-outline block mb-2">notifications_off</span>
+                <span class="font-body-sm text-body-sm">Henüz bildiriminiz yok.</span>
+            </div>
+        }
+        else
+        {
+            foreach (var n in Model)
+            {
+                <a href="@Url.Action("Open", "Notifications", new { id = n.Id })"
+                   class="flex items-start gap-space-md px-space-md py-space-md hover:bg-white/[0.03] transition-colors @(n.IsRead ? "" : "bg-primary/[0.06]")">
+                    <span class="material-symbols-outlined text-[1.25rem] mt-0.5 @(n.IsRead ? "text-outline" : "text-primary")">@n.Icon</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-body-sm text-body-sm text-on-surface leading-snug">@n.Message</div>
+                        <div class="font-code-sm text-[0.625rem] text-outline mt-1">
+                            @n.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                        </div>
+                    </div>
+                    @if (!n.IsRead)
+                    {
+                        <span class="w-2 h-2 rounded-full bg-primary mt-2 shrink-0"></span>
+                    }
+                </a>
+            }
+        }
+    </div>
+</div>

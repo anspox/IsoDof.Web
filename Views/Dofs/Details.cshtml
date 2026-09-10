@@ -12,9 +12,9 @@
     <section class="flex flex-col gap-4">
         <!-- Breadcrumb & Tag Row -->
         <div class="flex items-center gap-2 text-xs font-mono text-outline">
-            <a asp-action="Index" class="hover:text-secondary transition-colors">CAPA Directory</a>
+            <a asp-action="Index" class="hover:text-secondary transition-colors">DÖF Listesi</a>
             <span class="text-white/20">/</span>
-            <span class="text-primary font-semibold">CAPA-@Model.Id.ToString("D3")</span>
+            <span class="text-primary font-semibold">DÖF-@Model.Id.ToString("D3")</span>
             <span class="text-white/20">·</span>
             <span class="text-on-surface-variant">ISO 9001 §8.5.2</span>
         </div>
@@ -30,21 +30,21 @@
                     {
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20 font-medium tracking-wide">
                             <span class="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span>
-                            Critical Severity (Overdue)
+                            Kritik Önem (Gecikmiş)
                         </span>
                     }
                     else if (Model.Type == IsoDof.Web.Models.Entities.Enums.DofType.Duzeltici)
                     {
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium tracking-wide">
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                            Corrective Action
+                            Düzeltici Faaliyet
                         </span>
                     }
                     else
                     {
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/25 font-medium tracking-wide">
                             <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                            Preventive Action
+                            Önleyici Faaliyet
                         </span>
                     }
 
@@ -68,12 +68,12 @@
                 {
                     <a asp-action="Edit" asp-route-id="@Model.Id" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-white/[0.08] text-xs font-medium transition-all">
                         <span class="material-symbols-outlined text-[1.125rem] text-outline">edit</span>
-                        <span>Edit Dossier</span>
+                        <span>Düzenle</span>
                     </a>
                 }
                 <a asp-action="ExportPdf" asp-route-id="@Model.Id" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-surface font-semibold text-xs hover:bg-primary-dim shadow-sm shadow-primary/10 transition-all">
                     <span class="material-symbols-outlined text-[1.125rem]">file_download</span>
-                    <span>Export Dossier</span>
+                    <span>PDF İndir</span>
                 </a>
             </div>
         </div>
@@ -111,7 +111,7 @@
                     <span class="text-xs text-secondary font-mono">Zamanında</span>
                 }
             </div>
-            <span class="text-xs text-on-surface-variant mt-1">21 CFR Part 11 İzlenebilir</span>
+            <span class="text-xs text-on-surface-variant mt-1">Denetime uygun izlenebilirlik</span>
         </div>
 
         <!-- Metric 3: Standart & Değerlendirme -->
@@ -136,7 +136,7 @@
                         <span class="material-symbols-outlined text-primary text-[1.25rem]">description</span>
                         <span>Problem Tanımı &amp; Kök Neden Bulguları</span>
                     </h2>
-                    <span class="text-xs font-mono text-outline">CAPA-@Model.Id.ToString("D3")</span>
+                    <span class="text-xs font-mono text-outline">DÖF-@Model.Id.ToString("D3")</span>
                 </div>
                 <p class="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
                     @Model.Description
@@ -161,7 +161,7 @@
                         <span class="material-symbols-outlined text-primary text-[1.25rem]">task_alt</span>
                         <h2 class="font-display text-base font-semibold text-white tracking-wide">Faaliyet Adımları (Aksiyon Planı)</h2>
                     </div>
-                    <span class="text-xs font-mono text-primary font-medium">@completedActions of @totalActions Completed (@actionRate%)</span>
+                    <span class="text-xs font-mono text-primary font-medium">@totalActions adımdan @completedActions tamamlandı (%@actionRate)</span>
                 </div>
 
                 @if (!Model.Actions.Any())
@@ -212,7 +212,7 @@
                         <span class="material-symbols-outlined text-secondary text-[1.25rem]">history_edu</span>
                         <h2 class="font-display text-base font-semibold text-white tracking-wide">Denetim İzi &amp; Durum Geçmişi</h2>
                     </div>
-                    <span class="text-xs font-mono text-outline">21 CFR Part 11</span>
+                    <span class="text-xs font-mono text-outline">Denetim Kaydı</span>
                 </div>
 
                 @if (!Model.StatusHistory.Any())
@@ -296,7 +296,7 @@
                     <div class="flex items-center justify-between">
                         <span class="text-[11px] text-outline font-mono">Kayıtlar sistem denetim günlüğüne işlenir</span>
                         <button type="submit" class="px-3.5 py-1.5 rounded-md bg-secondary text-surface font-semibold text-xs hover:bg-white transition-colors cursor-pointer">
-                            Post Sign-Off
+                            Yorumu Kaydet
                         </button>
                     </div>
                 </form>
@@ -308,12 +308,12 @@
             <!-- Dossier Metadata Card -->
             <section class="bg-surface-container-low border border-white/[0.06] rounded-xl p-6 flex flex-col gap-5 shadow-sm">
                 <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-outline pb-2 border-b border-white/[0.06]">
-                    Dossier Information
+                    Kayıt Bilgileri
                 </h2>
 
                 <!-- Lead Assignee with clean avatar -->
                 <div class="flex flex-col gap-2">
-                    <span class="text-[11px] uppercase tracking-wider font-mono text-outline">Lead Assignee (Atanan)</span>
+                    <span class="text-[11px] uppercase tracking-wider font-mono text-outline">Atanan Sorumlu</span>
                     <div class="flex items-center gap-3 p-2.5 rounded-lg bg-surface-container/60 border border-white/[0.04]">
                         <div class="w-9 h-9 rounded-full bg-primary/20 text-primary font-bold text-xs flex items-center justify-center ring-1 ring-white/10">
                             @(Model.AssignedToUser?.FullName?.Length > 0 ? Model.AssignedToUser.FullName.Substring(0, 1).ToUpper() : "?")
@@ -374,9 +374,9 @@
             <section class="bg-surface-container-low border border-white/[0.06] rounded-xl p-6 flex flex-col gap-4 shadow-sm">
                 <div class="flex items-center justify-between pb-2 border-b border-white/[0.06]">
                     <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-outline">
-                        Attachments &amp; Artifacts
+                        Ekler &amp; Kanıtlar
                     </h2>
-                    <span class="text-[11px] font-mono text-outline">@Model.Attachments.Count Files</span>
+                    <span class="text-[11px] font-mono text-outline">@Model.Attachments.Count Dosya</span>
                 </div>
 
                 @if (TempData["UploadError"] != null)
@@ -406,7 +406,7 @@
                                             @attachment.FileName
                                         </a>
                                         <span class="text-[10px] text-outline font-mono">
-                                            @(attachment.UploadedByUser?.FullName ?? "Staff") · @attachment.UploadedAt.ToLocalTime().ToString("dd.MM.yyyy")
+                                            @(attachment.UploadedByUser?.FullName ?? "Personel") · @attachment.UploadedAt.ToLocalTime().ToString("dd.MM.yyyy")
                                         </span>
                                     </div>
                                 </div>
@@ -426,7 +426,7 @@
                            class="w-full text-xs text-outline file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-surface-container-high file:text-primary hover:file:bg-primary hover:file:text-surface transition-colors cursor-pointer" />
                     <button type="submit" class="w-full py-2 px-3 border border-dashed border-white/[0.12] hover:border-primary/40 rounded-lg text-center text-xs text-outline hover:text-primary transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <span class="material-symbols-outlined text-[1rem]">cloud_upload</span>
-                        <span>Upload New Artifact</span>
+                        <span>Yeni Dosya Yükle</span>
                     </button>
                 </form>
             </section>

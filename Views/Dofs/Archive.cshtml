@@ -11,7 +11,7 @@
             <div class="text-xs text-outline flex items-center gap-2 mb-1">
                 <a asp-controller="Dofs" asp-action="Index" class="hover:text-white transition-colors">DÖF Kayıtları</a>
                 <span class="text-white/20">/</span>
-                <span class="text-on-surface font-medium">CAPA-@Model.Id.ToString("D3") Arşivleme</span>
+                <span class="text-on-surface font-medium">DÖF-@Model.Id.ToString("D3") Arşivleme</span>
             </div>
             <h1 class="text-2xl font-semibold text-white tracking-tight">DÖF Kaydını Arşivle</h1>
             <p class="text-xs text-outline mt-0.5">Kayıt kalıcı olarak silinmez, ISO denetim izi korunarak arşive taşınır.</p>
@@ -35,8 +35,8 @@
         <!-- Target CAPA Details -->
         <div class="space-y-3 py-2 border-y border-white/[0.04]">
             <div class="flex items-center justify-between py-1">
-                <span class="text-xs text-outline font-medium">CAPA Referansı</span>
-                <span class="font-mono text-xs text-primary font-semibold">CAPA-@Model.Id.ToString("D3")</span>
+                <span class="text-xs text-outline font-medium">DÖF Referansı</span>
+                <span class="font-mono text-xs text-primary font-semibold">DÖF-@Model.Id.ToString("D3")</span>
             </div>
             <div class="flex items-center justify-between py-1">
                 <span class="text-xs text-outline font-medium">Başlık</span>
@@ -59,7 +59,7 @@
             <div class="space-y-1.5">
                 <label for="archiveReason" class="text-xs font-medium text-outline uppercase tracking-wider block">Arşivleme Nedeni (Gerekçe)</label>
                 <textarea id="archiveReason" name="archiveReason" rows="3"
-                          placeholder="Örn: Mükerrer kayıt açılması veya hedefin başka bir CAPA ile konsolide edilmesi..."
+                          placeholder="Örn: Mükerrer kayıt açılması veya kaydın başka bir DÖF ile birleştirilmesi..."
                           class="w-full p-3 bg-surface-container border border-white/[0.08] text-white placeholder:text-outline/50 rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors"></textarea>
             </div>
 

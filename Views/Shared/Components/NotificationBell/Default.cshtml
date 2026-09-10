@@ -1,0 +1,108 @@
+@model int
+@{
+    var unread = Model;
+}
+
+<div class="relative" id="notif-bell-root">
+    <button type="button" id="notif-bell-btn"
+            class="relative p-2 text-on-surface-variant hover:text-white transition-colors rounded-lg hover:bg-white/[0.04]"
+            aria-label="Bildirimler">
+        <span class="material-symbols-outlined text-[1.25rem]">notifications</span>
+        <span id="notif-bell-badge"
+              class="@(unread > 0 ? "" : "hidden") absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-1 rounded-full bg-error text-on-error text-[0.625rem] font-bold flex items-center justify-center ring-2 ring-surface">
+            @(unread > 99 ? "99+" : unread.ToString())
+        </span>
+    </button>
+
+    <!-- Dropdown Panel -->
+    <div id="notif-bell-panel"
+         class="hidden absolute right-0 mt-2 w-80 max-h-[28rem] flex flex-col bg-surface-container border border-outline-variant/30 rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
+            <span class="font-label-md text-label-md font-semibold text-on-surface">Bildirimler</span>
+            <form asp-controller="Notifications" asp-action="MarkAllRead" method="post">
+                <button type="submit" class="text-[0.6875rem] text-primary hover:underline">Tümünü okundu işaretle</button>
+            </form>
+        </div>
+
+        <div id="notif-bell-list" class="flex-1 overflow-y-auto divide-y divide-outline-variant/10">
+            <div class="px-4 py-6 text-center text-on-surface-variant text-xs">Yükleniyor…</div>
+        </div>
+
+        <a asp-controller="Notifications" asp-action="Index"
+           class="block text-center px-4 py-2.5 text-xs font-medium text-primary hover:bg-white/[0.03] border-t border-outline-variant/20">
+            Tüm bildirimleri gör
+        </a>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var root = document.getElementById('notif-bell-root');
+        var btn = document.getElementById('notif-bell-btn');
+        var panel = document.getElementById('notif-bell-panel');
+        var list = document.getElementById('notif-bell-list');
+        var badge = document.getElementById('notif-bell-badge');
+        if (!root || root.dataset.wired) return;
+        root.dataset.wired = "1";
+
+        var recentUrl = '@Url.Action("Recent", "Notifications")';
+        var openUrl = '@Url.Action("Open", "Notifications")';
+
+        function esc(s) {
+            return (s || '').replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        function render(data) {
+            var n = data.unreadCount || 0;
+            if (n > 0) {
+                badge.textContent = n > 99 ? '99+' : n;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            if (!data.items || !data.items.length) {
+                list.innerHTML = '<div class="px-4 py-8 text-center text-on-surface-variant text-xs">Henüz bildirim yok.</div>';
+                return;
+            }
+
+            list.innerHTML = data.items.map(function (it) {
+                return '<a href="' + openUrl + '?id=' + it.id + '" '
+                    + 'class="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors ' + (it.isRead ? '' : 'bg-primary/[0.06]') + '">'
+                    + '<span class="material-symbols-outlined text-[1.125rem] ' + (it.isRead ? 'text-outline' : 'text-primary') + ' mt-0.5">' + esc(it.icon || 'notifications') + '</span>'
+                    + '<span class="flex-1 min-w-0">'
+                    + '<span class="block text-xs text-on-surface leading-snug">' + esc(it.message) + '</span>'
+                    + '<span class="block text-[0.625rem] text-outline mt-1">' + esc(it.ago) + '</span>'
+                    + '</span>'
+                    + (it.isRead ? '' : '<span class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0"></span>')
+                    + '</a>';
+            }).join('');
+        }
+
+        function load() {
+            fetch(recentUrl, { headers: { 'X-Requested-With': 'fetch' } })
+                .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+                .then(render)
+                .catch(function () {
+                    list.innerHTML = '<div class="px-4 py-8 text-center text-error text-xs">Bildirimler yüklenemedi.</div>';
+                });
+        }
+
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var willOpen = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            if (willOpen) load();
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!root.contains(e.target)) panel.classList.add('hidden');
+        });
+
+        // İlk yüklemede rozet sayısını tazele
+        load();
+        setInterval(load, 60000);
+    })();
+</script>

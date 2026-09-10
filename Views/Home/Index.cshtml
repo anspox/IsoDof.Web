@@ -1,20 +1,20 @@
 @model IsoDof.Web.Models.DashboardViewModel
 
 @{
-    ViewData["Title"] = "Quality Control & CAPA";
-    var roleDisplayName = User.IsInRole("Admin") ? "System Admin" :
-                         (User.IsInRole("KaliteKontrol") ? "QA Lead" : "Staff");
+    ViewData["Title"] = "Kalite Kontrol & DÖF";
+    var roleDisplayName = User.IsInRole("Admin") ? "Sistem Yöneticisi" :
+                         (User.IsInRole("KaliteKontrol") ? "Kalite Sorumlusu" : "Çalışan");
     var totalDofs = Model.TotalCount > 0 ? Model.TotalCount : 1;
     var openRate = Math.Round((double)Model.OpenCount / totalDofs * 100);
     var closedRate = Math.Round((double)Model.ClosedCount / totalDofs * 100);
 }
 
-<!-- HEADER BAR: TITLE & TOP ACTIONS -->
+<!-- BAŞLIK ÇUBUĞU: BAŞLIK & ÜST İŞLEMLER -->
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold tracking-tight text-white">Quality Control &amp; CAPA</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-white">Kalite Kontrol &amp; DÖF</h1>
         <p class="text-xs text-on-surface-variant mt-1">
-            Real-time non-conformance tracking and ISO compliance monitoring • 
+            Anlık uygunsuzluk takibi ve ISO uyum izleme •
             <span class="text-primary font-medium">@Model.UserFullName</span>
             @if (!string.IsNullOrEmpty(Model.DepartmentName))
             {
@@ -25,50 +25,50 @@
     <div class="flex items-center gap-3">
         <a asp-controller="Dofs" asp-action="ExportExcel" class="flex items-center gap-2 bg-surface-container-low hover:bg-white/[0.04] text-on-surface border border-white/[0.08] px-3.5 py-2 rounded-lg text-xs font-medium transition-colors">
             <span class="material-symbols-outlined text-[1.125rem] text-outline">file_download</span>
-            <span>Export Summary</span>
+            <span>Özeti Dışa Aktar</span>
         </a>
         @if (!User.IsInRole("Admin") && !User.IsInRole("KaliteKontrol"))
         {
             <a asp-controller="Dofs" asp-action="Create" class="flex items-center gap-2 bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all">
                 <span class="material-symbols-outlined text-[1.125rem]">add</span>
-                <span>New CAPA</span>
+                <span>Yeni DÖF</span>
             </a>
         }
     </div>
 </div>
 
-<!-- 3 ESSENTIAL METRIC CARDS (DECLUTTERED) -->
+<!-- 3 TEMEL METRİK KARTI -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-    <!-- Card 1: Active CAPAs -->
+    <!-- Kart 1: Açık DÖF'ler -->
     <div class="bg-surface-container-low rounded-xl p-5 border border-white/[0.06] flex flex-col justify-between hover:border-white/[0.12] transition-colors shadow-sm">
         <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-on-surface-variant">Active CAPAs</span>
+            <span class="text-xs font-medium text-on-surface-variant">Açık DÖF'ler</span>
             <span class="text-[0.6875rem] font-medium font-mono text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
-                @openRate% Active
+                %@openRate Açık
             </span>
         </div>
         <div class="mt-4 flex items-baseline gap-3">
             <span class="text-3xl font-bold tracking-tight text-white">@Model.OpenCount</span>
             <span class="text-xs text-on-surface-variant">
-                @Model.TotalCount total · @Model.ClosedCount closed
+                @Model.TotalCount toplam · @Model.ClosedCount kapatıldı
             </span>
         </div>
     </div>
 
-    <!-- Card 2: Attention Required / Overdue -->
+    <!-- Kart 2: Dikkat Gerektiren / Gecikmiş -->
     <div class="bg-surface-container-low rounded-xl p-5 border border-white/[0.06] flex flex-col justify-between hover:border-white/[0.12] transition-colors shadow-sm">
         <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-on-surface-variant">Attention Required</span>
+            <span class="text-xs font-medium text-on-surface-variant">Dikkat Gerektiren</span>
             @if (Model.OverdueCount > 0)
             {
                 <span class="text-[0.6875rem] font-medium font-mono text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full animate-pulse">
-                    Requires Review
+                    İnceleme Bekliyor
                 </span>
             }
             else
             {
                 <span class="text-[0.6875rem] font-medium font-mono text-tertiary bg-tertiary/10 border border-tertiary/20 px-2 py-0.5 rounded-full">
-                    All Clear
+                    Sorun Yok
                 </span>
             }
         </div>
@@ -77,49 +77,49 @@
                 @Model.OverdueCount
             </span>
             <span class="text-xs text-on-surface-variant">
-                @(Model.OverdueCount > 0 ? "Overdue root-cause or actions" : "Zero overdue records")
+                @(Model.OverdueCount > 0 ? "Gecikmiş kök neden veya faaliyet" : "Gecikmiş kayıt yok")
             </span>
         </div>
     </div>
 
-    <!-- Card 3: Resolution Rate -->
+    <!-- Kart 3: Zamanında Kapatma Oranı -->
     <div class="bg-surface-container-low rounded-xl p-5 border border-white/[0.06] flex flex-col justify-between hover:border-white/[0.12] transition-colors shadow-sm">
         <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-on-surface-variant">On-Time SLA Rate</span>
+            <span class="text-xs font-medium text-on-surface-variant">Zamanında Kapatma Oranı</span>
             <span class="text-[0.6875rem] font-medium font-mono text-tertiary bg-tertiary/10 border border-tertiary/20 px-2 py-0.5 rounded-full">
-                Target Met
+                Hedefe Ulaşıldı
             </span>
         </div>
         <div class="mt-4 flex items-baseline gap-3">
-            <span class="text-3xl font-bold tracking-tight text-white">@closedRate%</span>
-            <span class="text-xs text-on-surface-variant">@Model.ClosedCount verified closed</span>
+            <span class="text-3xl font-bold tracking-tight text-white">%@closedRate</span>
+            <span class="text-xs text-on-surface-variant">@Model.ClosedCount doğrulanıp kapatıldı</span>
         </div>
     </div>
 </div>
 
-<!-- MAIN TWO-COLUMN LAYOUT -->
+<!-- ANA İKİ KOLONLU YERLEŞİM -->
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-    <!-- LEFT COLUMN: STREAMLINED CAPA RECORDS TABLE (8 Cols) -->
+    <!-- SOL KOLON: DÖF KAYITLARI TABLOSU (8 Kolon) -->
     <div class="xl:col-span-8 bg-surface-container-low rounded-xl border border-white/[0.06] overflow-hidden shadow-sm">
-        <!-- Table Search & Filter Bar -->
+        <!-- Tablo Arama & Filtre Çubuğu -->
         <div class="p-5 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h2 class="text-base font-semibold text-white">Active Non-Conformances</h2>
-                <p class="text-xs text-on-surface-variant mt-0.5">Showing @Model.UrgentDofs.Count priority items requiring action</p>
+                <h2 class="text-base font-semibold text-white">Açık Uygunsuzluklar</h2>
+                <p class="text-xs text-on-surface-variant mt-0.5">Aksiyon bekleyen @Model.UrgentDofs.Count öncelikli kayıt gösteriliyor</p>
             </div>
             <div class="flex items-center gap-2">
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[1rem]">search</span>
                     <input class="bg-surface-container border border-white/[0.08] rounded-lg pl-8 pr-3 py-1 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary/40 w-48"
-                           id="capaSearchInput" placeholder="Filter records..." type="text" />
+                           id="capaSearchInput" placeholder="Kayıtlarda filtrele..." type="text" />
                 </div>
-                <a asp-controller="Dofs" asp-action="Index" class="p-1.5 rounded-lg border border-white/[0.08] bg-surface-container text-on-surface-variant hover:text-white transition-colors" title="View all filters">
+                <a asp-controller="Dofs" asp-action="Index" class="p-1.5 rounded-lg border border-white/[0.08] bg-surface-container text-on-surface-variant hover:text-white transition-colors" title="Tüm filtreleri gör">
                     <span class="material-symbols-outlined text-[1.125rem]">tune</span>
                 </a>
             </div>
         </div>
 
-        <!-- Clean High-Density Table -->
+        <!-- Yoğun Tablo -->
         <div class="overflow-x-auto">
             @if (!Model.UrgentDofs.Any())
             {
@@ -133,12 +133,12 @@
                 <table class="w-full text-left text-xs">
                     <thead>
                         <tr class="border-b border-white/[0.06] text-on-surface-variant font-medium">
-                            <th class="py-3.5 px-5 font-normal">CAPA ID</th>
-                            <th class="py-3.5 px-4 font-normal">Title &amp; Root Detail</th>
-                            <th class="py-3.5 px-4 font-normal">Severity</th>
-                            <th class="py-3.5 px-4 font-normal">Department</th>
-                            <th class="py-3.5 px-4 font-normal">Status / Due</th>
-                            <th class="py-3.5 px-5 text-right font-normal">Action</th>
+                            <th class="py-3.5 px-5 font-normal">DÖF No</th>
+                            <th class="py-3.5 px-4 font-normal">Başlık &amp; Açıklama</th>
+                            <th class="py-3.5 px-4 font-normal">Önem</th>
+                            <th class="py-3.5 px-4 font-normal">Departman</th>
+                            <th class="py-3.5 px-4 font-normal">Durum / Termin</th>
+                            <th class="py-3.5 px-5 text-right font-normal">İşlem</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/[0.04]">
@@ -147,7 +147,7 @@
                             <tr class="hover:bg-white/[0.02] transition-colors group">
                                 <td class="py-4 px-5 font-mono font-medium text-primary whitespace-nowrap">
                                     <a asp-controller="Dofs" asp-action="Details" asp-route-id="@dof.Id" class="hover:underline">
-                                        CAPA-@dof.Id.ToString("D3")
+                                        DÖF-@dof.Id.ToString("D3")
                                     </a>
                                 </td>
                                 <td class="py-4 px-4 max-w-xs">
@@ -162,19 +162,19 @@
                                     @if (dof.IsOverdue)
                                     {
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-red-500/10 text-red-400 border border-red-500/20">
-                                            Critical
+                                            Kritik
                                         </span>
                                     }
                                     else if (dof.Type == IsoDof.Web.Models.Entities.Enums.DofType.Duzeltici)
                                     {
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                                            High
+                                            Yüksek
                                         </span>
                                     }
                                     else
                                     {
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                                            Medium
+                                            Orta
                                         </span>
                                     }
                                 </td>
@@ -184,7 +184,7 @@
                                 <td class="py-4 px-4 whitespace-nowrap">
                                     @if (dof.IsOverdue)
                                     {
-                                        <div class="text-red-400 font-medium text-[0.6875rem]">Overdue (@(dof.DueDate?.ToString("dd.MM") ?? "-"))</div>
+                                        <div class="text-red-400 font-medium text-[0.6875rem]">Gecikmiş (@(dof.DueDate?.ToString("dd.MM") ?? "-"))</div>
                                         <div class="text-[0.6875rem] text-on-surface-variant mt-0.5">@dof.Status</div>
                                     }
                                     else
@@ -196,7 +196,7 @@
                                 <td class="py-4 px-5 text-right whitespace-nowrap">
                                     <a asp-controller="Dofs" asp-action="Details" asp-route-id="@dof.Id"
                                        class="text-xs font-medium text-primary hover:text-primary-container px-2.5 py-1 rounded-md hover:bg-primary/10 transition-colors">
-                                        Review
+                                        İncele
                                     </a>
                                 </td>
                             </tr>
@@ -206,25 +206,25 @@
             }
         </div>
 
-        <!-- Minimal Pagination -->
+        <!-- Sayfalama -->
         <div class="p-4 border-t border-white/[0.06] flex items-center justify-between text-xs text-on-surface-variant">
-            <span>Showing @Model.UrgentDofs.Count of @Model.TotalCount records</span>
+            <span>@Model.TotalCount kayıttan @Model.UrgentDofs.Count tanesi gösteriliyor</span>
             <div class="flex items-center gap-1">
                 <a asp-controller="Dofs" asp-action="Index" class="px-3 py-1 rounded hover:bg-white/[0.04] text-primary transition-colors text-xs font-medium">
-                    View All Records →
+                    Tüm Kayıtları Gör →
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- RIGHT COLUMN: SLEEK MINIMAL ACTIVITY TIMELINE (4 Cols) -->
+    <!-- SAĞ KOLON: SON HAREKETLER ZAMAN ÇİZELGESİ (4 Kolon) -->
     <div class="xl:col-span-4 bg-surface-container-low rounded-xl border border-white/[0.06] p-5 flex flex-col gap-5 shadow-sm">
         <div class="flex items-center justify-between">
-            <h2 class="text-base font-semibold text-white">Recent Activity</h2>
-            <span class="text-[0.6875rem] text-on-surface-variant font-mono">Audit Trail</span>
+            <h2 class="text-base font-semibold text-white">Son Hareketler</h2>
+            <span class="text-[0.6875rem] text-on-surface-variant font-mono">Denetim İzi</span>
         </div>
 
-        <!-- Clean Activity Items -->
+        <!-- Hareket Öğeleri -->
         <div class="flex flex-col gap-4">
             @if (Model.RecentDofs.Any())
             {
@@ -244,7 +244,9 @@
                                 <span class="text-[0.6875rem] text-on-surface-variant shrink-0">@dof.CreatedAt.ToString("dd.MM")</span>
                             </div>
                             <p class="text-xs text-on-surface-variant mt-0.5 leading-relaxed">
-                                <strong class="text-on-surface">@(dof.CreatedByUser?.FullName ?? "Staff")</strong> logged <span class="font-mono text-primary text-[0.6875rem]">CAPA-@dof.Id.ToString("D3")</span> for @(dof.Department?.Name ?? "General").
+                                <strong class="text-on-surface">@(dof.CreatedByUser?.FullName ?? "Çalışan")</strong>,
+                                @(dof.Department?.Name ?? "Genel") için
+                                <span class="font-mono text-primary text-[0.6875rem]">DÖF-@dof.Id.ToString("D3")</span> kaydını oluşturdu.
                             </p>
                         </div>
                     </div>
@@ -259,14 +261,14 @@
         </div>
 
         <a asp-controller="DofActions" asp-action="Index" class="w-full py-2 px-3 text-center rounded-lg border border-white/[0.06] hover:bg-white/[0.03] text-xs font-medium text-on-surface-variant hover:text-white transition-colors mt-1">
-            View Actions &amp; Audits
+            Faaliyetler &amp; Denetimler
         </a>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // Simple table filter
+        // Basit tablo filtresi
         document.getElementById('capaSearchInput')?.addEventListener('input', function (e) {
             const val = e.target.value.toLowerCase();
             const rows = document.querySelectorAll('tbody tr');
