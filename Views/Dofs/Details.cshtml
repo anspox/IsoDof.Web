@@ -1,364 +1,435 @@
 @model IsoDof.Web.Models.Entities.Dof
 
 @{
-    ViewData["Title"] = $"DÖF-#{Model.Id:D4} Detay";
+    ViewData["Title"] = $"DÖF-#{Model.Id:D3} Detay";
+    var completedActions = Model.Actions.Count(a => a.IsCompleted);
+    var totalActions = Model.Actions.Count;
+    var actionRate = totalActions > 0 ? (completedActions * 100 / totalActions) : 100;
 }
 
-<div class="flex flex-col w-full gap-space-lg">
-    <!-- DOSSIER HEADER SUB-BAR -->
-    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-space-md bg-surface-container-low p-space-md rounded-xl shadow-md border border-outline-variant/20">
-        <div class="flex flex-col gap-space-2xs min-w-0">
-            <div class="flex items-center gap-space-xs text-on-surface-variant font-code-sm text-code-sm uppercase tracking-wider">
-                <a asp-action="Index" class="hover:underline text-outline">DÖF Kayıtları</a>
-                <span class="material-symbols-outlined text-[0.875rem] text-outline">chevron_right</span>
-                <span class="text-primary font-semibold">DÖF-#@Model.Id.ToString("D4")</span>
-            </div>
-            <div class="flex flex-wrap items-center gap-space-md">
-                <h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">
+<div class="max-w-[1360px] mx-auto flex flex-col gap-8 text-on-surface">
+    <!-- Breadcrumbs & Dossier Hero Header -->
+    <section class="flex flex-col gap-4">
+        <!-- Breadcrumb & Tag Row -->
+        <div class="flex items-center gap-2 text-xs font-mono text-outline">
+            <a asp-action="Index" class="hover:text-secondary transition-colors">CAPA Directory</a>
+            <span class="text-white/20">/</span>
+            <span class="text-primary font-semibold">CAPA-@Model.Id.ToString("D3")</span>
+            <span class="text-white/20">·</span>
+            <span class="text-on-surface-variant">ISO 9001 §8.5.2</span>
+        </div>
+
+        <!-- Title, Badges & Action Buttons -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 pb-6 border-b border-white/[0.06]">
+            <div class="flex flex-col gap-3 max-w-3xl">
+                <h1 class="font-display text-3xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
                     @Model.Title
                 </h1>
-                <span class="font-label-sm text-label-sm px-space-sm py-space-2xs rounded-full border font-bold
-                      @(Model.Status == IsoDof.Web.Models.Entities.Enums.DofStatus.Kapatildi ? "bg-tertiary/10 text-tertiary border-tertiary/30" :
-                        (Model.Status == IsoDof.Web.Models.Entities.Enums.DofStatus.Reddedildi ? "bg-error/10 text-error border-error/30" :
-                         "bg-primary/10 text-primary border-primary/30"))">
-                    Durum: @Model.Status
-                </span>
-                @if (Model.IsOverdue)
-                {
-                    <span class="inline-flex items-center gap-space-2xs bg-error-container/30 text-error px-space-sm py-space-2xs rounded-full font-label-sm text-label-sm font-bold border border-error/30 animate-pulse">
-                        <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
-                        GECİKMİŞ (SLA)
+                <div class="flex flex-wrap items-center gap-2.5 text-xs">
+                    @if (Model.IsOverdue)
+                    {
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20 font-medium tracking-wide">
+                            <span class="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span>
+                            Critical Severity (Overdue)
+                        </span>
+                    }
+                    else if (Model.Type == IsoDof.Web.Models.Entities.Enums.DofType.Duzeltici)
+                    {
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium tracking-wide">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                            Corrective Action
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/25 font-medium tracking-wide">
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                            Preventive Action
+                        </span>
+                    }
+
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/25 font-medium tracking-wide">
+                        Durum: @Model.Status
                     </span>
+
+                    <span class="text-outline font-mono text-[11px] ml-1">
+                        Oluşturulma: @Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                    </span>
+                </div>
+            </div>
+
+            <!-- Clean Modern Action Group -->
+            <div class="flex items-center gap-3 shrink-0">
+                <a asp-action="Index" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-white/[0.08] text-xs font-medium transition-all">
+                    <span class="material-symbols-outlined text-[1.125rem] text-outline">arrow_back</span>
+                    <span>Listeye Dön</span>
+                </a>
+                @if (!Model.IsArchived)
+                {
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-white/[0.08] text-xs font-medium transition-all">
+                        <span class="material-symbols-outlined text-[1.125rem] text-outline">edit</span>
+                        <span>Edit Dossier</span>
+                    </a>
+                }
+                <a asp-action="ExportPdf" asp-route-id="@Model.Id" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-surface font-semibold text-xs hover:bg-primary-dim shadow-sm shadow-primary/10 transition-all">
+                    <span class="material-symbols-outlined text-[1.125rem]">file_download</span>
+                    <span>Export Dossier</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Metrics Strip: Modern Minimalist Stat Counters -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- Metric 1: Faaliyet Durumu -->
+        <div class="bg-surface-container-low border border-white/[0.06] rounded-xl p-5 flex flex-col justify-between shadow-sm">
+            <span class="text-xs uppercase tracking-wider font-mono text-outline font-medium">Faaliyet Adımları</span>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="font-display text-3xl font-bold text-white tracking-tight">@completedActions / @totalActions</span>
+                <span class="text-xs text-primary font-mono font-medium">%@actionRate Tamamlandı</span>
+            </div>
+            <span class="text-xs text-on-surface-variant mt-1">@(Model.Department?.Name ?? "Genel") Departmanı</span>
+        </div>
+
+        <!-- Metric 2: SLA & Termin -->
+        <div class="bg-surface-container-low border border-white/[0.06] rounded-xl p-5 flex flex-col justify-between shadow-sm">
+            <span class="text-xs uppercase tracking-wider font-mono text-outline font-medium">Termin / SLA Durumu</span>
+            <div class="flex items-baseline gap-2 mt-2">
+                @if (Model.ClosedAt.HasValue)
+                {
+                    <span class="font-display text-3xl font-bold text-tertiary tracking-tight">Kapatıldı</span>
+                    <span class="text-xs text-tertiary font-mono">Doğrulandı</span>
+                }
+                else if (Model.IsOverdue)
+                {
+                    <span class="font-display text-3xl font-bold text-error tracking-tight">Gecikmiş</span>
+                    <span class="text-xs text-error font-mono">Termin: @(Model.DueDate?.ToString("dd.MM.yyyy") ?? "-")</span>
+                }
+                else
+                {
+                    <span class="font-display text-3xl font-bold text-white tracking-tight">@(Model.DueDate?.ToString("dd.MM.yyyy") ?? "Belirtilmedi")</span>
+                    <span class="text-xs text-secondary font-mono">Zamanında</span>
                 }
             </div>
-            <p class="font-body-sm text-body-sm text-on-surface-variant">
-                Oluşturulma: <span class="font-code-sm text-on-surface">@Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span> •
-                Açan: <span class="text-secondary font-medium">@(Model.CreatedByUser?.FullName ?? "Bilinmiyor")</span> •
-                Departman: <span class="text-on-surface font-medium">@(Model.Department?.Name ?? "-")</span>
-            </p>
+            <span class="text-xs text-on-surface-variant mt-1">21 CFR Part 11 İzlenebilir</span>
         </div>
 
-        <!-- ACTIONS -->
-        <div class="flex flex-wrap items-center gap-space-xs">
-            <a asp-action="Index" class="inline-flex items-center gap-space-2xs bg-surface-container hover:bg-surface-container-high text-on-surface px-space-md py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
-                <span class="material-symbols-outlined text-[1rem]">arrow_back</span>
-                <span>Listeye Dön</span>
-            </a>
-
-            @if (!Model.IsArchived)
-            {
-                <a asp-action="Edit" asp-route-id="@Model.Id" class="inline-flex items-center gap-space-2xs bg-surface-container hover:bg-surface-container-high text-primary px-space-md py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
-                    <span class="material-symbols-outlined text-[1rem]">edit</span>
-                    <span>Düzenle</span>
-                </a>
-                <a asp-action="Archive" asp-route-id="@Model.Id" class="inline-flex items-center gap-space-2xs bg-surface-container hover:bg-error-container/20 text-outline hover:text-error px-space-md py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
-                    <span class="material-symbols-outlined text-[1rem]">archive</span>
-                    <span>Arşivle</span>
-                </a>
-            }
+        <!-- Metric 3: Standart & Değerlendirme -->
+        <div class="bg-surface-container-low border border-white/[0.06] rounded-xl p-5 flex flex-col justify-between shadow-sm">
+            <span class="text-xs uppercase tracking-wider font-mono text-outline font-medium">Risk &amp; Standart</span>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="font-display text-3xl font-bold text-secondary tracking-tight">@Model.Type</span>
+                <span class="text-xs text-outline font-mono">@Model.Source</span>
+            </div>
+            <span class="text-xs text-on-surface-variant mt-1">ISO 9001:2015 Denetim Hazırlığı</span>
         </div>
-    </div>
+    </section>
 
-    <!-- MAIN DOSSIER SPLIT (8 / 4) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
-        <!-- LEFT COLUMN (8 COLS): DETAILS, ACTIONS, COMMENTS -->
-        <div class="lg:col-span-8 flex flex-col gap-space-md">
-            <!-- AÇIKLAMA KARTI -->
-            <div class="bg-surface-container-low rounded-xl p-space-md shadow-md border border-outline-variant/20 flex flex-col gap-space-xs">
-                <div class="flex items-center gap-space-xs pb-space-xs border-b border-outline-variant/20">
-                    <span class="material-symbols-outlined text-primary text-[1.25rem]">description</span>
-                    <h2 class="font-title-md text-title-md text-on-surface font-bold">Uygunsuzluk & Problem Tanımı</h2>
+    <!-- Main Layout Grid: 8 cols Primary, 4 cols Metadata -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Left Column: Core Investigation Dossier (8 cols) -->
+        <div class="lg:col-span-8 flex flex-col gap-8">
+            <!-- 1. Executive Summary & Root Cause -->
+            <section class="bg-surface-container-low border border-white/[0.06] rounded-xl p-6 sm:p-7 flex flex-col gap-5 shadow-sm">
+                <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                    <h2 class="font-display text-base font-semibold text-white tracking-wide flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[1.25rem]">description</span>
+                        <span>Problem Tanımı &amp; Kök Neden Bulguları</span>
+                    </h2>
+                    <span class="text-xs font-mono text-outline">CAPA-@Model.Id.ToString("D3")</span>
                 </div>
-                <p class="font-body-md text-body-md text-on-surface whitespace-pre-wrap leading-relaxed pt-space-xs">
+                <p class="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
                     @Model.Description
                 </p>
-            </div>
-
-            <!-- FAALİYET ADIMLARI (ACTION STEPS) -->
-            <div class="bg-surface-container-low rounded-xl p-space-md shadow-md border border-outline-variant/20 flex flex-col gap-space-md">
-                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
-                    <div class="flex items-center gap-space-xs">
-                        <span class="material-symbols-outlined text-secondary text-[1.25rem]">task_alt</span>
-                        <h2 class="font-title-md text-title-md text-on-surface font-bold">Faaliyet Adımları</h2>
+                <div class="p-4 rounded-lg bg-surface-container/60 border border-white/[0.04] flex flex-col gap-1.5">
+                    <div class="flex items-center gap-2 text-secondary text-xs font-medium uppercase font-mono tracking-wider">
+                        <span class="material-symbols-outlined text-[1rem]">account_tree</span>
+                        <span>Süreç Özeti &amp; Sınıflandırma</span>
                     </div>
-                    <span class="font-code-sm text-code-sm bg-surface-container text-secondary px-space-xs py-space-2xs rounded border border-secondary/20">
-                        @Model.Actions.Count(a => a.IsCompleted) / @Model.Actions.Count Tamamlandı
-                    </span>
+                    <p class="text-xs text-on-surface-variant leading-relaxed">
+                        Faaliyet Türü: <strong class="text-white">@Model.Type</strong> •
+                        Uygunsuzluk Kaynağı: <strong class="text-white">@Model.Source</strong> •
+                        Sorumlu Departman: <strong class="text-white">@(Model.Department?.Name ?? "-")</strong>
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. Action Plan Checklist -->
+            <section class="bg-surface-container-low border border-white/[0.06] rounded-xl p-6 sm:p-7 flex flex-col gap-5 shadow-sm">
+                <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[1.25rem]">task_alt</span>
+                        <h2 class="font-display text-base font-semibold text-white tracking-wide">Faaliyet Adımları (Aksiyon Planı)</h2>
+                    </div>
+                    <span class="text-xs font-mono text-primary font-medium">@completedActions of @totalActions Completed (@actionRate%)</span>
                 </div>
 
                 @if (!Model.Actions.Any())
                 {
-                    <div class="p-4 text-center text-on-surface-variant font-body-sm text-body-sm bg-surface-container rounded-lg border border-outline-variant/20">
-                        Henüz faaliyet adımı tanımlanmamış.
+                    <div class="py-6 text-center text-xs text-on-surface-variant">
+                        Henüz tanımlanmış bir faaliyet adımı bulunmamaktadır.
                     </div>
                 }
                 else
                 {
-                    <div class="flex flex-col gap-space-xs">
+                    <!-- Task List -->
+                    <div class="flex flex-col divide-y divide-white/[0.04]">
                         @foreach (var action in Model.Actions)
                         {
-                            <div class="p-space-sm bg-surface-container rounded-lg border border-outline-variant/20 flex items-center justify-between gap-space-sm">
-                                <div class="flex items-center gap-space-sm">
-                                    <span class="material-symbols-outlined text-[1.25rem] @(action.IsCompleted ? "text-tertiary" : "text-outline")">
-                                        @(action.IsCompleted ? "check_circle" : "radio_button_unchecked")
+                            <div class="py-3.5 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
+                                <div class="flex items-start gap-3">
+                                    <span class="material-symbols-outlined @(action.IsCompleted ? "text-tertiary" : "text-secondary") text-[1.125rem] mt-0.5 shrink-0">
+                                        @(action.IsCompleted ? "check_circle" : "schedule")
                                     </span>
                                     <div class="flex flex-col">
-                                        <span class="font-label-md text-label-md text-on-surface @(action.IsCompleted ? "line-through opacity-70" : "font-medium")">
+                                        <span class="text-xs font-medium text-white @(action.IsCompleted ? "line-through opacity-70" : "")">
                                             @action.Description
                                         </span>
-                                        <span class="font-body-sm text-body-sm text-on-surface-variant text-[0.75rem]">
-                                            Sorumlu: <strong class="text-on-surface font-medium">@(action.ResponsibleUser?.FullName ?? "-")</strong>
+                                        <span class="text-[11px] text-outline mt-0.5">
+                                            Sorumlu: <strong class="text-on-surface">@(action.ResponsibleUser?.FullName ?? "-")</strong>
                                         </span>
                                     </div>
                                 </div>
-                                <span class="font-label-sm text-label-sm px-space-xs py-space-2xs rounded border font-semibold
-                                      @(action.IsCompleted ? "bg-tertiary/10 text-tertiary border-tertiary/30" : "bg-warning/10 text-secondary border-secondary/30")">
-                                    @(action.IsCompleted ? "Tamamlandı" : "Bekliyor")
-                                </span>
+                                <div class="text-right shrink-0">
+                                    <span class="text-[11px] font-mono @(action.IsCompleted ? "text-tertiary font-medium" : "text-secondary")">
+                                        @(action.IsCompleted ? "Tamamlandı" : "İşlemde")
+                                    </span>
+                                    @if (action.DueDate.HasValue)
+                                    {
+                                        <span class="text-[10px] block text-outline">Termin: @action.DueDate.Value.ToString("dd.MM")</span>
+                                    }
+                                </div>
                             </div>
                         }
                     </div>
                 }
-            </div>
+            </section>
 
-            <!-- DURUM DEĞİŞİKLİĞİ GEÇMİŞİ (AUDIT TRAIL) -->
-            <div class="bg-surface-container-low rounded-xl p-space-md shadow-md border border-outline-variant/20 flex flex-col gap-space-md">
-                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
-                    <div class="flex items-center gap-space-xs">
-                        <span class="material-symbols-outlined text-primary text-[1.25rem]">history</span>
-                        <h2 class="font-title-md text-title-md text-on-surface font-bold">Durum Değişikliği ve Denetim İzi</h2>
+            <!-- 3. Audit Trail Activity (Durum Geçmişi) -->
+            <section class="bg-surface-container-low border border-white/[0.06] rounded-xl p-6 sm:p-7 flex flex-col gap-4 shadow-sm">
+                <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary text-[1.25rem]">history_edu</span>
+                        <h2 class="font-display text-base font-semibold text-white tracking-wide">Denetim İzi &amp; Durum Geçmişi</h2>
                     </div>
-                    <span class="font-code-sm text-code-sm text-outline">Değiştirilemez Kayıt</span>
+                    <span class="text-xs font-mono text-outline">21 CFR Part 11</span>
                 </div>
 
                 @if (!Model.StatusHistory.Any())
                 {
-                    <p class="text-on-surface-variant font-body-sm text-body-sm">Henüz durum değişikliği kaydı yok.</p>
+                    <div class="py-4 text-xs text-on-surface-variant text-center">Henüz durum değişikliği kaydı yok.</div>
                 }
                 else
                 {
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left font-body-sm text-body-sm text-on-surface">
-                            <thead>
-                                <tr class="bg-surface-container text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider border-b border-outline-variant/20">
-                                    <th class="py-space-xs px-space-sm">Tarih</th>
-                                    <th class="py-space-xs px-space-sm">İşlemi Yapan</th>
-                                    <th class="py-space-xs px-space-sm">Eski Durum</th>
-                                    <th class="py-space-xs px-space-sm">Yeni Durum</th>
-                                    <th class="py-space-xs px-space-sm">Not</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-outline-variant/10">
-                                @foreach (var h in Model.StatusHistory.OrderBy(x => x.ChangedAt))
-                                {
-                                    <tr class="hover:bg-surface-container/50">
-                                        <td class="py-space-xs px-space-sm font-code-sm text-code-sm text-outline whitespace-nowrap">
-                                            @h.ChangedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
-                                        </td>
-                                        <td class="py-space-xs px-space-sm font-label-sm text-label-sm text-on-surface whitespace-nowrap">
-                                            @(h.ChangedByUser?.FullName ?? "-")
-                                        </td>
-                                        <td class="py-space-xs px-space-sm font-code-sm text-code-sm text-outline">
-                                            @(h.OldStatus?.ToString() ?? "—")
-                                        </td>
-                                        <td class="py-space-xs px-space-sm font-code-sm text-code-sm text-primary font-bold">
-                                            @h.NewStatus
-                                        </td>
-                                        <td class="py-space-xs px-space-sm text-on-surface-variant text-[0.8125rem]">
-                                            @h.Note
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                    <div class="flex flex-col divide-y divide-white/[0.04] text-xs">
+                        @foreach (var h in Model.StatusHistory.OrderByDescending(x => x.ChangedAt))
+                        {
+                            <div class="py-2.5 flex items-center justify-between gap-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="font-mono text-outline text-[11px] w-24">@h.ChangedAt.ToLocalTime().ToString("dd.MM, HH:mm")</span>
+                                    <span class="text-on-surface font-medium">
+                                        @(h.OldStatus.HasValue ? $"{h.OldStatus} → " : "")<strong class="text-primary">@h.NewStatus</strong>
+                                        @if (!string.IsNullOrEmpty(h.Note))
+                                        {
+                                            <span class="text-outline ml-1">(@h.Note)</span>
+                                        }
+                                    </span>
+                                </div>
+                                <span class="text-on-surface-variant font-mono text-[11px]">@(h.ChangedByUser?.FullName ?? "Sistem")</span>
+                            </div>
+                        }
                     </div>
                 }
-            </div>
+            </section>
 
-            <!-- YORUMLAR (COMMENTS) -->
-            <div class="bg-surface-container-low rounded-xl p-space-md shadow-md border border-outline-variant/20 flex flex-col gap-space-md">
-                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
-                    <div class="flex items-center gap-space-xs">
+            <!-- 4. Review & Discussion Thread (Yorumlar) -->
+            <section class="bg-surface-container-low border border-white/[0.06] rounded-xl p-6 sm:p-7 flex flex-col gap-5 shadow-sm">
+                <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                    <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary text-[1.25rem]">forum</span>
-                        <h2 class="font-title-md text-title-md text-on-surface font-bold">Yorumlar & Görüşler</h2>
+                        <h2 class="font-display text-base font-semibold text-white tracking-wide">İnceleme, Değerlendirme &amp; Yorumlar</h2>
                     </div>
-                    <span class="font-code-sm text-code-sm text-primary bg-primary/10 px-space-xs py-space-2xs rounded border border-primary/20">
-                        @Model.Comments.Count Yorum
-                    </span>
+                    <span class="text-xs font-mono text-outline">@Model.Comments.Count Yorum / İmza</span>
                 </div>
 
+                <!-- Existing comments -->
                 @if (!Model.Comments.Any())
                 {
-                    <div class="py-6 text-center text-on-surface-variant font-body-sm text-body-sm">
+                    <div class="py-6 text-center text-xs text-on-surface-variant">
                         Henüz yorum yapılmamış. İlk değerlendirmeyi aşağıdan ekleyebilirsiniz.
                     </div>
                 }
                 else
                 {
-                    <div class="flex flex-col gap-space-sm">
+                    <div class="flex flex-col gap-3">
                         @foreach (var comment in Model.Comments)
                         {
-                            <div class="p-space-sm bg-surface-container rounded-lg border border-outline-variant/20 flex flex-col gap-space-2xs">
+                            <div class="p-4 rounded-lg bg-surface-container/60 border border-white/[0.04] flex flex-col gap-2">
                                 <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-space-xs">
-                                        <div class="w-6 h-6 rounded-full bg-primary/20 text-primary font-code-sm text-code-sm flex items-center justify-center font-bold">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs">
                                             @(comment.AuthorUser?.FullName?.Length > 0 ? comment.AuthorUser.FullName.Substring(0, 1).ToUpper() : "U")
                                         </div>
-                                        <strong class="font-label-md text-label-md text-on-surface">@(comment.AuthorUser?.FullName ?? "-")</strong>
+                                        <div>
+                                            <span class="text-xs font-medium text-white block">@(comment.AuthorUser?.FullName ?? "Kullanıcı")</span>
+                                            <span class="text-[11px] text-outline font-mono">@comment.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy, HH:mm")</span>
+                                        </div>
                                     </div>
-                                    <small class="font-code-sm text-code-sm text-outline">
-                                        @comment.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
-                                    </small>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono text-primary bg-primary/10 border border-primary/20">
+                                        <span class="material-symbols-outlined text-[0.75rem]">verified</span>
+                                        Doğrulandı
+                                    </span>
                                 </div>
-                                <div class="font-body-sm text-body-sm text-on-surface pl-8 whitespace-pre-wrap">
+                                <p class="text-xs text-on-surface-variant leading-relaxed pl-10 whitespace-pre-wrap">
                                     @comment.Text
-                                </div>
+                                </p>
                             </div>
                         }
                     </div>
                 }
 
-                <!-- YORUM EKLE FORMU -->
-                <form asp-action="AddComment" asp-controller="Dofs" method="post" class="flex flex-col gap-space-xs pt-space-xs border-t border-outline-variant/20">
+                <!-- Quick Note Input -->
+                <form asp-action="AddComment" asp-controller="Dofs" method="post" class="flex flex-col gap-2.5 pt-2 border-t border-white/[0.06]">
                     <input type="hidden" name="dofId" value="@Model.Id" />
-                    <textarea name="text" rows="2" placeholder="DÖF hakkında teknik yorum, kök neden analizi veya not ekleyin..." required
-                              class="w-full bg-surface-container border border-outline-variant/40 rounded-lg p-space-sm text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"></textarea>
-                    <div class="flex justify-end">
-                        <button type="submit" class="inline-flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm px-space-md py-space-xs rounded-lg font-semibold transition-colors shadow-sm">
-                            <span class="material-symbols-outlined text-[1rem]">send</span>
-                            <span>Yorum Ekle</span>
+                    <textarea name="text" rows="2" placeholder="DÖF hakkında teknik not, mevzuat görüşü veya inceleme sonucu ekleyin..." required
+                              class="w-full bg-surface-container border border-white/[0.08] rounded-lg p-3 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 resize-none transition-colors"></textarea>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] text-outline font-mono">Kayıtlar sistem denetim günlüğüne işlenir</span>
+                        <button type="submit" class="px-3.5 py-1.5 rounded-md bg-secondary text-surface font-semibold text-xs hover:bg-white transition-colors cursor-pointer">
+                            Post Sign-Off
                         </button>
                     </div>
                 </form>
-            </div>
+            </section>
         </div>
 
-        <!-- RIGHT COLUMN (4 COLS): META INFO & ATTACHMENTS -->
-        <div class="lg:col-span-4 flex flex-col gap-space-md">
-            <!-- DÖF META KARTI -->
-            <div class="bg-surface-container-low rounded-xl p-space-md shadow-md border border-outline-variant/20 flex flex-col gap-space-sm">
-                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
-                    <span class="font-title-md text-title-md text-on-surface font-bold">DÖF Künyesi</span>
-                    <span class="font-code-sm text-code-sm text-secondary font-bold">ISO Uyumlu</span>
+        <!-- Right Column: Minimal Sidebar Metadata & Evidence (4 cols) -->
+        <aside class="lg:col-span-4 flex flex-col gap-6">
+            <!-- Dossier Metadata Card -->
+            <section class="bg-surface-container-low border border-white/[0.06] rounded-xl p-6 flex flex-col gap-5 shadow-sm">
+                <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-outline pb-2 border-b border-white/[0.06]">
+                    Dossier Information
+                </h2>
+
+                <!-- Lead Assignee with clean avatar -->
+                <div class="flex flex-col gap-2">
+                    <span class="text-[11px] uppercase tracking-wider font-mono text-outline">Lead Assignee (Atanan)</span>
+                    <div class="flex items-center gap-3 p-2.5 rounded-lg bg-surface-container/60 border border-white/[0.04]">
+                        <div class="w-9 h-9 rounded-full bg-primary/20 text-primary font-bold text-xs flex items-center justify-center ring-1 ring-white/10">
+                            @(Model.AssignedToUser?.FullName?.Length > 0 ? Model.AssignedToUser.FullName.Substring(0, 1).ToUpper() : "?")
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-semibold text-white">@(Model.AssignedToUser?.FullName ?? "Atanmadı")</span>
+                            <span class="text-[11px] text-primary font-mono">Sorumlu Uzman</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="flex flex-col gap-space-xs font-body-sm text-body-sm">
-                    <div class="flex items-center justify-between p-space-xs bg-surface-container rounded border border-outline-variant/20">
-                        <span class="text-outline">Faaliyet Türü</span>
-                        <span class="font-code-sm text-code-sm text-on-surface font-semibold">@Model.Type</span>
-                    </div>
-
-                    <div class="flex items-center justify-between p-space-xs bg-surface-container rounded border border-outline-variant/20">
-                        <span class="text-outline">Uygunsuzluk Kaynağı</span>
-                        <span class="font-label-sm text-label-sm text-on-surface font-semibold">@Model.Source</span>
-                    </div>
-
-                    <div class="flex items-center justify-between p-space-xs bg-surface-container rounded border border-outline-variant/20">
+                <!-- Key attributes -->
+                <div class="flex flex-col divide-y divide-white/[0.04] text-xs">
+                    <div class="py-2.5 flex items-center justify-between">
                         <span class="text-outline">Departman</span>
-                        <span class="font-label-sm text-label-sm text-secondary font-semibold">@(Model.Department?.Name ?? "-")</span>
+                        <span class="text-on-surface font-medium">@(Model.Department?.Name ?? "-")</span>
                     </div>
-
-                    <div class="flex items-center justify-between p-space-xs bg-surface-container rounded border border-outline-variant/20">
+                    <div class="py-2.5 flex items-center justify-between">
                         <span class="text-outline">Açan Personel</span>
-                        <span class="font-label-sm text-label-sm text-on-surface">@(Model.CreatedByUser?.FullName ?? "-")</span>
+                        <span class="text-secondary font-medium">@(Model.CreatedByUser?.FullName ?? "-")</span>
                     </div>
-
-                    <div class="flex items-center justify-between p-space-xs bg-surface-container rounded border border-outline-variant/20">
-                        <span class="text-outline">Atanan Sorumlu</span>
-                        <span class="font-label-sm text-label-sm text-primary font-semibold">@(Model.AssignedToUser?.FullName ?? "Atanmadı")</span>
-                    </div>
-
-                    <div class="flex items-center justify-between p-space-xs bg-surface-container rounded border border-outline-variant/20">
+                    <div class="py-2.5 flex items-center justify-between">
                         <span class="text-outline">Termin Tarihi (SLA)</span>
-                        <span class="font-code-sm text-code-sm @(Model.IsOverdue ? "text-error font-bold" : "text-on-surface")">
+                        <span class="@(Model.IsOverdue ? "text-error font-bold" : "text-white") font-mono font-medium">
                             @(Model.DueDate?.ToString("dd.MM.yyyy") ?? "—")
                         </span>
                     </div>
-
                     @if (Model.ClosedAt.HasValue)
                     {
-                        <div class="flex items-center justify-between p-space-xs bg-surface-container rounded border border-outline-variant/20">
+                        <div class="py-2.5 flex items-center justify-between">
                             <span class="text-outline">Kapanış Tarihi</span>
-                            <span class="font-code-sm text-code-sm text-tertiary font-bold">
-                                @Model.ClosedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
-                            </span>
+                            <span class="text-tertiary font-mono">@Model.ClosedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
                         </div>
                     }
-
                     @if (Model.IsArchived)
                     {
-                        <div class="p-space-xs bg-surface-container rounded border border-error/30 flex flex-col gap-1 text-error">
-                            <div class="flex items-center justify-between font-label-sm text-label-sm font-bold">
-                                <span>ARŞİVLENDİ</span>
+                        <div class="py-2.5 flex flex-col gap-1 text-outline">
+                            <div class="flex items-center justify-between text-error font-semibold">
+                                <span>Arşivlendi</span>
                                 <span>@Model.ArchivedAt?.ToLocalTime().ToString("dd.MM.yyyy")</span>
                             </div>
-                            <span class="text-[0.75rem] text-on-surface-variant">
-                                Arşivleyen: @(Model.ArchivedByUser?.FullName ?? "-")
-                            </span>
-                            @if (!string.IsNullOrWhiteSpace(Model.ArchiveReason))
-                            {
-                                <span class="text-[0.75rem] text-outline">Neden: @Model.ArchiveReason</span>
-                            }
+                            <span class="text-[11px]">Neden: @(Model.ArchiveReason ?? "-")</span>
                         </div>
                     }
                 </div>
-            </div>
 
-            <!-- DOSYA EKLERİ KARTI (ATTACHMENTS) -->
-            <div class="bg-surface-container-low rounded-xl p-space-md shadow-md border border-outline-variant/20 flex flex-col gap-space-md">
-                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
-                    <div class="flex items-center gap-space-xs">
-                        <span class="material-symbols-outlined text-secondary text-[1.25rem]">attach_file</span>
-                        <span class="font-title-md text-title-md text-on-surface font-bold">Dosya Ekleri & Kanıtlar</span>
+                <!-- Current Status Box -->
+                <div class="flex flex-col gap-1.5 pt-1">
+                    <span class="text-[11px] uppercase tracking-wider font-mono text-outline">Mevcut Aşama</span>
+                    <div class="w-full bg-surface-container border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-primary font-semibold flex items-center justify-between">
+                        <span>@Model.Status</span>
+                        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                     </div>
-                    <span class="font-code-sm text-code-sm text-secondary bg-secondary/10 px-space-xs py-space-2xs rounded border border-secondary/20">
-                        @Model.Attachments.Count Dosya
-                    </span>
+                </div>
+            </section>
+
+            <!-- Evidence & Attachments Card -->
+            <section class="bg-surface-container-low border border-white/[0.06] rounded-xl p-6 flex flex-col gap-4 shadow-sm">
+                <div class="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                    <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-outline">
+                        Attachments &amp; Artifacts
+                    </h2>
+                    <span class="text-[11px] font-mono text-outline">@Model.Attachments.Count Files</span>
                 </div>
 
                 @if (TempData["UploadError"] != null)
                 {
-                    <div class="p-space-xs bg-error-container/20 text-error rounded font-body-sm text-body-sm border border-error/30">
+                    <div class="p-2.5 rounded-lg bg-error/10 text-error text-xs border border-error/20">
                         @TempData["UploadError"]
                     </div>
                 }
 
                 @if (!Model.Attachments.Any())
                 {
-                    <div class="py-4 text-center text-on-surface-variant font-body-sm text-body-sm">
-                        Henüz kanıt veya ek dosya yüklenmemiş.
+                    <div class="py-4 text-center text-xs text-on-surface-variant">
+                        Henüz yüklenmiş kanıt veya dosya eki bulunmuyor.
                     </div>
                 }
                 else
                 {
-                    <div class="flex flex-col gap-space-xs">
+                    <div class="flex flex-col gap-2">
                         @foreach (var attachment in Model.Attachments)
                         {
-                            <div class="p-space-xs bg-surface-container rounded-lg border border-outline-variant/20 flex items-center justify-between gap-space-xs">
-                                <a href="~/uploads/dof-attachments/@attachment.StoredFileName" target="_blank"
-                                   class="font-label-sm text-label-sm text-primary hover:underline truncate max-w-[200px] flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[1rem]">description</span>
-                                    <span>@attachment.FileName</span>
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-surface-container/60 border border-white/[0.04] hover:border-white/20 transition-all group">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <span class="material-symbols-outlined text-secondary text-[1.25rem] shrink-0">description</span>
+                                    <div class="flex flex-col min-w-0">
+                                        <a href="~/uploads/dof-attachments/@attachment.StoredFileName" target="_blank"
+                                           class="text-xs font-medium text-white truncate hover:underline hover:text-primary">
+                                            @attachment.FileName
+                                        </a>
+                                        <span class="text-[10px] text-outline font-mono">
+                                            @(attachment.UploadedByUser?.FullName ?? "Staff") · @attachment.UploadedAt.ToLocalTime().ToString("dd.MM.yyyy")
+                                        </span>
+                                    </div>
+                                </div>
+                                <a href="~/uploads/dof-attachments/@attachment.StoredFileName" download="@attachment.FileName"
+                                   class="text-outline group-hover:text-primary transition-colors p-1" title="İndir">
+                                    <span class="material-symbols-outlined text-[1.125rem]">download</span>
                                 </a>
-                                <span class="font-code-sm text-code-sm text-outline text-[0.6875rem] whitespace-nowrap">
-                                    @attachment.UploadedAt.ToLocalTime().ToString("dd.MM.yyyy")
-                                </span>
                             </div>
                         }
                     </div>
                 }
 
-                <!-- DOSYA YÜKLE FORMU -->
-                <form asp-action="UploadAttachment" asp-controller="Dofs" method="post" enctype="multipart/form-data" class="flex flex-col gap-space-xs pt-space-xs border-t border-outline-variant/20">
+                <!-- Clean upload form -->
+                <form asp-action="UploadAttachment" asp-controller="Dofs" method="post" enctype="multipart/form-data" class="mt-1 flex flex-col gap-2">
                     <input type="hidden" name="dofId" value="@Model.Id" />
-                    <input type="file" name="file" required
-                           class="w-full bg-surface-container text-on-surface font-body-sm text-body-sm p-1.5 rounded-lg border border-outline-variant/30 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-surface-container-high file:text-primary hover:file:bg-primary-container hover:file:text-white" />
-                    <button type="submit" class="inline-flex items-center justify-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm py-space-xs rounded-lg transition-colors border border-outline-variant/30">
+                    <input type="file" name="file" id="attachment-input" required
+                           class="w-full text-xs text-outline file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-surface-container-high file:text-primary hover:file:bg-primary hover:file:text-surface transition-colors cursor-pointer" />
+                    <button type="submit" class="w-full py-2 px-3 border border-dashed border-white/[0.12] hover:border-primary/40 rounded-lg text-center text-xs text-outline hover:text-primary transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <span class="material-symbols-outlined text-[1rem]">cloud_upload</span>
-                        <span>Dosyayı Sisteme Ekle</span>
+                        <span>Upload New Artifact</span>
                     </button>
                 </form>
-            </div>
-        </div>
+            </section>
+        </aside>
     </div>
 </div>
