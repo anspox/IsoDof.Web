@@ -1,0 +1,37 @@
+@model IsoDof.Web.Models.Entities.Dof
+
+@{
+    ViewData["Title"] = "DÖF Arşivle";
+}
+
+<h1>DÖF Arşivle</h1>
+
+<div class="alert alert-info">
+    Kayıt silinmez, yalnızca <strong>arşive taşınır</strong>. Denetim izi korunur ve gerektiğinde geri alınabilir.
+</div>
+
+<h3>Bu DÖF kaydını arşive taşımak istediğine emin misin?</h3>
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-2">Başlık</dt>
+        <dd class="col-sm-10">@Model.Title</dd>
+
+        <dt class="col-sm-2">Departman</dt>
+        <dd class="col-sm-10">@(Model.Department?.Name ?? "-")</dd>
+
+        <dt class="col-sm-2">Durum</dt>
+        <dd class="col-sm-10">@Model.Status</dd>
+    </dl>
+
+    <form asp-action="Archive" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div class="form-group mb-3">
+            <label for="archiveReason" class="control-label">Arşivleme Nedeni (opsiyonel)</label>
+            <textarea id="archiveReason" name="archiveReason" class="form-control" rows="3"
+                      placeholder="Örn: Mükerrer kayıt / yanlış açıldı / geçersiz"></textarea>
+        </div>
+        <button type="submit" class="btn btn-danger">Evet, Arşivle</button>
+        <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
+    </form>
+</div>

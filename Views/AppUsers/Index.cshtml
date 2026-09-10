@@ -27,7 +27,20 @@
                 <td>@user.FullName</td>
                 <td>@user.Email</td>
                 <td>@(user.Department?.Name ?? "-")</td>
-                <td>@user.Role</td>
+                <td>
+                    @if (user.Role == IsoDof.Web.Models.Entities.Enums.UserRole.Admin)
+                    {
+                        <span class="badge bg-danger">Admin</span>
+                    }
+                    else if (user.Role == IsoDof.Web.Models.Entities.Enums.UserRole.KaliteKontrol)
+                    {
+                        <span class="badge bg-primary">Kalite Kontrol</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Kullanıcı</span>
+                    }
+                </td>
                 <td>
                     <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
                     <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-outline-danger">Sil</a>

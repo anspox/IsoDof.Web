@@ -1,23 +1,59 @@
 @model IsoDof.Web.Models.LoginViewModel
 
-<h1>Giriş Yap</h1>
+@{
+    ViewData["Title"] = "Giriş Yap";
+}
 
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="w-full max-w-md p-space-xl bg-surface-container-low rounded-2xl shadow-2xl border border-outline-variant/30 flex flex-col gap-space-lg">
+    <!-- BRAND LOGO & HEADER -->
+    <div class="flex flex-col items-center text-center gap-space-xs">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-container to-secondary flex items-center justify-center text-surface shadow-lg shadow-primary/20 mb-2">
+            <span class="material-symbols-outlined text-3xl font-bold text-surface">verified_user</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">AEGIS</span>
+            <span class="font-headline-xl text-headline-xl text-primary font-bold tracking-tight">ISO QMS</span>
+        </div>
+        <p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs">
+            DÖF ve Kalite Yönetim Sistemi Kurumsal Giriş Portalı
+        </p>
+        <span class="mt-1 font-code-sm text-[0.6875rem] text-tertiary bg-tertiary/10 px-space-sm py-0.5 rounded-full border border-tertiary/30 uppercase tracking-wider">
+            ISO 9001:2015 Uyumlu
+        </span>
+    </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Email" class="control-label"></label>
-                <input asp-for="Email" class="form-control" />
-                <span asp-validation-for="Email" class="text-danger"></span>
+    <!-- FORM -->
+    <form asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post" class="flex flex-col gap-space-md">
+        <div asp-validation-summary="ModelOnly" class="p-space-xs bg-error-container/20 text-error rounded-lg text-xs border border-error/30 font-medium"></div>
+
+        <div class="flex flex-col gap-1.5">
+            <label asp-for="Email" class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Kurumsal E-posta</label>
+            <div class="relative flex items-center">
+                <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1.125rem]">mail</span>
+                <input asp-for="Email" type="email" placeholder="ornek@sirket.com" required
+                       class="w-full bg-surface-container border border-outline-variant/40 rounded-lg pl-10 pr-space-md py-space-xs font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
             </div>
-            <div class="form-group mb-3">
-                <label asp-for="Password" class="control-label"></label>
-                <input asp-for="Password" class="form-control" />
-                <span asp-validation-for="Password" class="text-danger"></span>
+            <span asp-validation-for="Email" class="text-error text-[0.75rem]"></span>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label asp-for="Password" class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Şifre</label>
+            <div class="relative flex items-center">
+                <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1.125rem]">lock</span>
+                <input asp-for="Password" type="password" placeholder="••••••••" required
+                       class="w-full bg-surface-container border border-outline-variant/40 rounded-lg pl-10 pr-space-md py-space-xs font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
             </div>
-            <button type="submit" class="btn btn-primary">Giriş Yap</button>
-        </form>
+            <span asp-validation-for="Password" class="text-error text-[0.75rem]"></span>
+        </div>
+
+        <button type="submit"
+                class="w-full mt-2 inline-flex items-center justify-center gap-space-xs bg-primary-container hover:bg-secondary-container text-white py-space-xs rounded-lg font-label-md text-label-md font-semibold transition-all shadow-[0_0_16px_rgba(14,165,233,0.3)] hover:shadow-[0_0_20px_rgba(14,165,233,0.5)]">
+            <span class="material-symbols-outlined text-[1.125rem]">login</span>
+            <span>Güvenli Giriş Yap</span>
+        </button>
+    </form>
+
+    <div class="text-center pt-space-xs border-t border-outline-variant/20 font-body-sm text-body-sm text-outline text-[0.75rem]">
+        ISO & CAPA Sistemi 21 CFR Part 11 Elektronik Kayıt Standartlarına tabidir.
     </div>
 </div>

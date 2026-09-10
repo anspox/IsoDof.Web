@@ -1,68 +1,317 @@
-@model IEnumerable<IsoDof.Web.Models.Entities.Dof>
+@model IsoDof.Web.Models.PagedList<IsoDof.Web.Models.Entities.Dof>
 
 @{
     ViewData["Title"] = "DÖF Kayıtları";
+    var showArchived = (bool)(ViewBag.ShowArchived ?? false);
+    var routeValues = new Dictionary<string, string>();
+    if (ViewBag.DepartmentId != null) routeValues["departmentId"] = ViewBag.DepartmentId.ToString();
+    if (ViewBag.Status != null) routeValues["status"] = ViewBag.Status.ToString();
+    if (!string.IsNullOrEmpty(ViewBag.SortOrder as string)) routeValues["sortOrder"] = (string)ViewBag.SortOrder;
+    if (showArchived) routeValues["showArchived"] = "true";
 }
 
-<h1>DÖF Kayıtları</h1>
+<div class="flex flex-col w-full gap-space-lg">
+    <!-- PAGE HEADER -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md bg-surface-container-low p-space-md rounded-xl shadow-md border border-outline-variant/20">
+        <div class="flex flex-col gap-space-2xs">
+            <div class="flex items-center gap-space-xs text-on-surface-variant font-code-sm text-code-sm uppercase tracking-wider">
+                <span>DÖF Yönetimi</span>
+                <span class="material-symbols-outlined text-[0.875rem] text-outline">chevron_right</span>
+                <span class="text-primary font-semibold">@(showArchived ? "Arşiv Kayıtları" : "Aktif DÖF Listesi")</span>
+            </div>
+            <div class="flex items-center gap-space-sm">
+                <h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">
+                    @(showArchived ? "DÖF Arşivi" : "DÖF Kayıtları")
+                </h1>
+                <span class="font-code-sm text-code-sm bg-primary/20 text-primary px-space-xs py-space-2xs rounded-full font-bold border border-primary/30">
+                    @Model.TotalCount Kayıt
+                </span>
+            </div>
+            @if (ViewBag.IsKaliteKontrol == true)
+            {
+                <div class="inline-flex items-center gap-space-xs text-secondary font-label-sm text-label-sm mt-1">
+                    <span class="material-symbols-outlined text-[1rem]">verified_user</span>
+                    <span><strong>@ViewBag.UserDepartmentName</strong> departmanı kalite kontrol kapsamındaki kayıtlar listelenmektedir.</span>
+                </div>
+            }
+        </div>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Yeni DÖF</a>
-</p>
+        <!-- ACTION BUTTONS -->
+        <div class="flex flex-wrap items-center gap-space-xs">
+            @if (!User.IsInRole("Admin") && !User.IsInRole("KaliteKontrol"))
+            {
+                <a asp-action="Create" class="inline-flex items-center gap-space-xs bg-primary-container hover:bg-secondary-container text-white px-space-md py-space-xs rounded-lg font-label-sm text-label-sm font-semibold transition-all shadow-[0_0_12px_rgba(14,165,233,0.3)]">
+                    <span class="material-symbols-outlined text-[1rem]">add_circle</span>
+                    <span>Yeni DÖF Aç</span>
+                </a>
+            }
 
-<form asp-action="Index" method="get" class="row g-2 mb-3">
-    <div class="col-auto">
-        <select name="departmentId" asp-items="ViewBag.Departments" class="form-control">
-            <option value="">Tüm Departmanlar</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <select name="status" asp-items="ViewBag.StatusList" class="form-control">
-            <option value="">Tüm Durumlar</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <select name="sortOrder" class="form-control">
-            <option value="">En Yeni</option>
-            <option value="oldest" selected="@(ViewBag.SortOrder == "oldest")">En Eski</option>
-            <option value="duedate_asc" selected="@(ViewBag.SortOrder == "duedate_asc")">Bitiş Tarihi (Yakın → Uzak)</option>
-            <option value="duedate_desc" selected="@(ViewBag.SortOrder == "duedate_desc")">Bitiş Tarihi (Uzak → Yakın)</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-secondary">Filtrele</button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Temizle</a>
-    </div>
-</form>
+            <a asp-action="ExportExcel" asp-all-route-data="routeValues" class="inline-flex items-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-tertiary px-space-sm py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
+                <span class="material-symbols-outlined text-[1rem]">table_view</span>
+                <span>Excel</span>
+            </a>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Başlık</th>
-            <th>Tür</th>
-            <th>Durum</th>
-            <th>Departman</th>
-            <th>Atanan</th>
-            <th>Gecikmiş mi?</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var dof in Model)
+            <a asp-action="ExportPdf" asp-all-route-data="routeValues" class="inline-flex items-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-error px-space-sm py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
+                <span class="material-symbols-outlined text-[1rem]">picture_as_pdf</span>
+                <span>PDF</span>
+            </a>
+
+            @if (showArchived)
+            {
+                <a asp-action="Index" class="inline-flex items-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-on-surface px-space-sm py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
+                    <span class="material-symbols-outlined text-[1rem] text-primary">inventory_2</span>
+                    <span>Aktif Kayıtlar</span>
+                </a>
+            }
+            else
+            {
+                <a asp-action="Index" asp-route-showArchived="true" class="inline-flex items-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-outline hover:text-on-surface px-space-sm py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
+                    <span class="material-symbols-outlined text-[1rem]">archive</span>
+                    <span>Arşiv</span>
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="p-space-sm bg-error-container/20 text-error rounded-lg border border-error/30 flex items-center gap-space-sm">
+            <span class="material-symbols-outlined text-[1.25rem]">warning</span>
+            <span class="font-body-sm text-body-sm font-medium">@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <!-- FILTERS TOOLBAR -->
+    <form asp-action="Index" method="get" class="bg-surface-container-low p-space-md rounded-xl shadow-md border border-outline-variant/20 flex flex-wrap items-center gap-space-sm">
+        <input type="hidden" name="showArchived" value="@(showArchived ? "true" : "false")" />
+
+        @if (ViewBag.IsKaliteKontrol != true)
         {
-            <tr class="@(dof.IsOverdue ? "table-danger" : "")">
-                <td>@dof.Title</td>
-                <td>@dof.Type</td>
-                <td>@dof.Status</td>
-                <td>@(dof.Department?.Name ?? "-")</td>
-                <td>@(dof.AssignedToUser?.FullName ?? "-")</td>
-                <td>@(dof.IsOverdue ? "Evet" : "Hayır")</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@dof.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
-                    <a asp-action="Details" asp-route-id="@dof.Id" class="btn btn-sm btn-outline-secondary">Detay</a>
-                    <a asp-action="Delete" asp-route-id="@dof.Id" class="btn btn-sm btn-outline-danger">Sil</a>
-                </td>
-            </tr>
+            <div class="relative inline-flex items-center flex-1 min-w-[180px]">
+                <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1rem]">corporate_fare</span>
+                <select name="departmentId" asp-items="ViewBag.Departments"
+                        class="w-full bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-8 py-space-xs rounded-lg border border-outline-variant/30 appearance-none focus:outline-none focus:border-primary">
+                    <option value="">Tüm Departmanlar</option>
+                </select>
+                <span class="material-symbols-outlined absolute right-space-xs text-outline pointer-events-none text-[1rem]">arrow_drop_down</span>
+            </div>
         }
-    </tbody>
-</table>
+
+        <div class="relative inline-flex items-center flex-1 min-w-[160px]">
+            <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1rem]">flag</span>
+            <select name="status" asp-items="ViewBag.StatusList"
+                    class="w-full bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-8 py-space-xs rounded-lg border border-outline-variant/30 appearance-none focus:outline-none focus:border-primary">
+                <option value="">Tüm Durumlar</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-space-xs text-outline pointer-events-none text-[1rem]">arrow_drop_down</span>
+        </div>
+
+        <div class="relative inline-flex items-center flex-1 min-w-[200px]">
+            <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1rem]">sort</span>
+            <select name="sortOrder"
+                    class="w-full bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-8 py-space-xs rounded-lg border border-outline-variant/30 appearance-none focus:outline-none focus:border-primary">
+                <option value="">Sıralama: En Yeni</option>
+                <option value="oldest" selected="@(ViewBag.SortOrder == "oldest")">En Eski</option>
+                <option value="duedate_asc" selected="@(ViewBag.SortOrder == "duedate_asc")">Bitiş Tarihi (Yakın → Uzak)</option>
+                <option value="duedate_desc" selected="@(ViewBag.SortOrder == "duedate_desc")">Bitiş Tarihi (Uzak → Yakın)</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-space-xs text-outline pointer-events-none text-[1rem]">arrow_drop_down</span>
+        </div>
+
+        <div class="flex items-center gap-space-xs">
+            <button type="submit" class="inline-flex items-center gap-space-2xs bg-primary hover:bg-primary-container text-on-primary px-space-md py-space-xs rounded-lg font-label-sm text-label-sm font-semibold transition-colors">
+                <span class="material-symbols-outlined text-[1rem]">filter_alt</span>
+                <span>Filtrele</span>
+            </button>
+
+            <a asp-action="Index" asp-route-showArchived="@(showArchived ? "true" : null)"
+               class="inline-flex items-center gap-space-2xs bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface px-space-sm py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
+                <span class="material-symbols-outlined text-[1rem]">refresh</span>
+                <span>Temizle</span>
+            </a>
+        </div>
+    </form>
+
+    <!-- DATA TABLE CARD -->
+    <div class="bg-surface-container-low rounded-xl shadow-md border border-outline-variant/20 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left font-body-sm text-body-sm text-on-surface">
+                <thead>
+                    <tr class="bg-surface-container text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider border-b border-outline-variant/20">
+                        <th class="py-space-sm px-space-md">DÖF No & Başlık</th>
+                        <th class="py-space-sm px-space-md">Tür</th>
+                        <th class="py-space-sm px-space-md">Durum</th>
+                        <th class="py-space-sm px-space-md">Departman</th>
+                        <th class="py-space-sm px-space-md">Atanan Sorumlu</th>
+                        <th class="py-space-sm px-space-md">Termin / SLA</th>
+                        <th class="py-space-sm px-space-md text-right">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant/10">
+                    @foreach (var dof in Model.Items)
+                    {
+                        <tr class="hover:bg-surface-container/50 transition-colors group">
+                            <td class="py-space-md px-space-md">
+                                <div class="flex flex-col">
+                                    <div class="flex items-center gap-space-xs">
+                                        <a asp-action="Details" asp-route-id="@dof.Id" class="font-code-sm text-code-sm font-bold text-primary hover:underline">
+                                            DÖF-#@dof.Id.ToString("D4")
+                                        </a>
+                                        @if (dof.IsArchived)
+                                        {
+                                            <span class="font-code-sm text-[0.625rem] bg-outline-variant/40 text-outline px-1 py-0.5 rounded">Arşivli</span>
+                                        }
+                                    </div>
+                                    <span class="font-label-md text-label-md font-semibold text-on-surface line-clamp-1 mt-0.5">
+                                        @dof.Title
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="py-space-md px-space-md whitespace-nowrap">
+                                <span class="font-code-sm text-code-sm px-space-xs py-space-2xs rounded bg-surface-container text-secondary border border-secondary/20">
+                                    @dof.Type
+                                </span>
+                            </td>
+                            <td class="py-space-md px-space-md whitespace-nowrap">
+                                <span class="font-label-sm text-label-sm px-space-xs py-space-2xs rounded border font-semibold
+                                      @(dof.Status == IsoDof.Web.Models.Entities.Enums.DofStatus.Kapatildi ? "bg-tertiary/10 text-tertiary border-tertiary/30" :
+                                        (dof.Status == IsoDof.Web.Models.Entities.Enums.DofStatus.Reddedildi ? "bg-error/10 text-error border-error/30" :
+                                         "bg-primary/10 text-primary border-primary/30"))">
+                                    @dof.Status
+                                </span>
+                            </td>
+                            <td class="py-space-md px-space-md whitespace-nowrap">
+                                <span class="font-label-sm text-label-sm bg-surface-container px-space-xs py-space-2xs rounded text-on-surface-variant border border-outline-variant/20">
+                                    @(dof.Department?.Name ?? "-")
+                                </span>
+                            </td>
+                            <td class="py-space-md px-space-md whitespace-nowrap">
+                                <div class="flex items-center gap-space-xs">
+                                    <div class="w-6 h-6 rounded-full bg-primary/20 text-primary font-code-sm text-code-sm flex items-center justify-center font-bold">
+                                        @(dof.AssignedToUser?.FullName?.Length > 0 ? dof.AssignedToUser.FullName.Substring(0, 1).ToUpper() : "?")
+                                    </div>
+                                    <span class="font-label-sm text-label-sm text-on-surface">
+                                        @(dof.AssignedToUser?.FullName ?? "Atanmadı")
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="py-space-md px-space-md whitespace-nowrap">
+                                @if (dof.IsOverdue)
+                                {
+                                    <span class="inline-flex items-center gap-space-2xs text-error font-code-sm text-code-sm font-semibold">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span>
+                                        Gecikmiş (@(dof.DueDate?.ToString("dd.MM.yyyy") ?? "-"))
+                                    </span>
+                                }
+                                else if (dof.DueDate.HasValue)
+                                {
+                                    <span class="font-code-sm text-code-sm text-on-surface-variant">
+                                        @dof.DueDate.Value.ToString("dd.MM.yyyy")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="font-code-sm text-code-sm text-outline">—</span>
+                                }
+                            </td>
+                            <td class="py-space-md px-space-md text-right whitespace-nowrap">
+                                <div class="inline-flex items-center gap-space-xs">
+                                    <a asp-action="Details" asp-route-id="@dof.Id"
+                                       class="inline-flex items-center gap-1 bg-surface-container hover:bg-surface-container-high text-primary px-space-sm py-space-2xs rounded font-label-sm text-label-sm transition-colors border border-outline-variant/20">
+                                        <span>Detay</span>
+                                        <span class="material-symbols-outlined text-[0.875rem]">visibility</span>
+                                    </a>
+
+                                    @if (dof.IsArchived)
+                                    {
+                                        <form asp-action="Unarchive" asp-route-id="@dof.Id" method="post" class="inline">
+                                            <button type="submit" class="inline-flex items-center gap-1 bg-tertiary/10 hover:bg-tertiary/20 text-tertiary px-space-sm py-space-2xs rounded font-label-sm text-label-sm border border-tertiary/30 transition-colors">
+                                                <span>Geri Al</span>
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@dof.Id"
+                                           class="inline-flex items-center gap-1 bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface px-space-sm py-space-2xs rounded font-label-sm text-label-sm transition-colors border border-outline-variant/20">
+                                            <span>Düzenle</span>
+                                        </a>
+                                        <a asp-action="Archive" asp-route-id="@dof.Id"
+                                           class="inline-flex items-center gap-1 bg-surface-container hover:bg-error-container/20 text-outline hover:text-error px-space-sm py-space-2xs rounded font-label-sm text-label-sm transition-colors border border-outline-variant/20">
+                                            <span>Arşivle</span>
+                                        </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-on-surface-variant font-body-sm text-body-sm">
+                                <span class="material-symbols-outlined text-3xl text-outline block mb-2">search_off</span>
+                                Filtreleme kriterlerine uygun DÖF kaydı bulunamadı.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGINATION BAR -->
+        <div class="p-space-md bg-surface-container flex flex-col sm:flex-row items-center justify-between gap-space-sm border-t border-outline-variant/20 font-body-sm text-body-sm text-on-surface-variant">
+            <span class="font-code-sm text-code-sm text-outline">
+                @Model.TotalCount kayıttan @Model.FirstItemIndex–@Model.LastItemIndex arası listeleniyor (Sayfa @Model.PageNumber / @(Model.TotalPages == 0 ? 1 : Model.TotalPages))
+            </span>
+
+            <div class="flex items-center gap-space-xs">
+                @if (Model.HasPrevious)
+                {
+                    <a class="inline-flex items-center gap-1 px-space-sm py-space-2xs rounded bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-label-sm text-label-sm border border-outline-variant/30"
+                       asp-action="Index"
+                       asp-route-departmentId="@ViewBag.DepartmentId"
+                       asp-route-status="@ViewBag.Status"
+                       asp-route-sortOrder="@ViewBag.SortOrder"
+                       asp-route-showArchived="@(showArchived ? "true" : null)"
+                       asp-route-page="@(Model.PageNumber - 1)">
+                        <span class="material-symbols-outlined text-[1rem]">chevron_left</span>
+                        <span>Önceki</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="inline-flex items-center gap-1 px-space-sm py-space-2xs rounded bg-surface-container text-outline/40 font-label-sm text-label-sm border border-outline-variant/10 cursor-not-allowed">
+                        <span class="material-symbols-outlined text-[1rem]">chevron_left</span>
+                        <span>Önceki</span>
+                    </span>
+                }
+
+                <span class="font-code-sm text-code-sm px-space-xs text-primary font-bold">
+                    @Model.PageNumber
+                </span>
+
+                @if (Model.HasNext)
+                {
+                    <a class="inline-flex items-center gap-1 px-space-sm py-space-2xs rounded bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-label-sm text-label-sm border border-outline-variant/30"
+                       asp-action="Index"
+                       asp-route-departmentId="@ViewBag.DepartmentId"
+                       asp-route-status="@ViewBag.Status"
+                       asp-route-sortOrder="@ViewBag.SortOrder"
+                       asp-route-showArchived="@(showArchived ? "true" : null)"
+                       asp-route-page="@(Model.PageNumber + 1)">
+                        <span>Sonraki</span>
+                        <span class="material-symbols-outlined text-[1rem]">chevron_right</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="inline-flex items-center gap-1 px-space-sm py-space-2xs rounded bg-surface-container text-outline/40 font-label-sm text-label-sm border border-outline-variant/10 cursor-not-allowed">
+                        <span>Sonraki</span>
+                        <span class="material-symbols-outlined text-[1rem]">chevron_right</span>
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+</div>

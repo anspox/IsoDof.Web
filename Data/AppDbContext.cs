@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<DofAction> DofActions => Set<DofAction>();
     public DbSet<DofComment> DofComments { get; set; }
     public DbSet<DofAttachment> DofAttachments { get; set; }
+    public DbSet<DofStatusHistory> DofStatusHistories => Set<DofStatusHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -64,6 +65,24 @@ public class AppDbContext : DbContext
             .HasOne(a => a.UploadedByUser)
             .WithMany()
             .HasForeignKey(a => a.UploadedByUserId)
-            .OnDelete(DeleteBehavior.Restrict); 
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DofStatusHistory>()
+            .HasOne(h => h.Dof)
+            .WithMany(d => d.StatusHistory)
+            .HasForeignKey(h => h.DofId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DofStatusHistory>()
+            .HasOne(h => h.ChangedByUser)
+            .WithMany()
+            .HasForeignKey(h => h.ChangedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Dof>()
+            .HasOne(d => d.ArchivedByUser)
+            .WithMany()
+            .HasForeignKey(d => d.ArchivedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

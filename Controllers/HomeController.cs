@@ -21,12 +21,39 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var query = _context.Dofs.Include(d => d.Department).AsQueryable();
+        var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var currentUser = await _context.AppUsers.Include(u => u.Department).FirstOrDefaultAsync(u => u.Id == currentUserId);
 
-        if (!User.IsInRole("Admin"))
+        var query = _context.Dofs
+            .Include(d => d.Department)
+            .Include(d => d.AssignedToUser)
+            .Include(d => d.CreatedByUser)
+            .Include(d => d.Actions)
+            .Where(d => !d.IsArchived);
+
+        var userRole = User.FindFirstValue(ClaimTypes.Role) ?? "Kullanici";
+        string? departmentName = currentUser?.Department?.Name;
+
+        if (User.IsInRole("Admin"))
         {
-            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            query = query.Where(d => d.AssignedToUserId == currentUserId);
+            // Yönetici tüm şirketi görür
+        }
+        else if (User.IsInRole("KaliteKontrol"))
+        {
+            // Kalite Kontrol sorumlusu sadece kendi departmanını görür
+            if (currentUser?.DepartmentId is int deptId)
+            {
+                query = query.Where(d => d.DepartmentId == deptId);
+            }
+            else
+            {
+                query = query.Where(d => false);
+            }
+        }
+        else
+        {
+            // Çalışan kendi açtığı veya kendisine atanan DÖF'leri görür
+            query = query.Where(d => d.AssignedToUserId == currentUserId || d.CreatedByUserId == currentUserId);
         }
 
         var dofs = await query.ToListAsync();
@@ -37,6 +64,9 @@ public class HomeController : Controller
             OpenCount = dofs.Count(d => d.Status != DofStatus.Kapatildi && d.Status != DofStatus.Reddedildi),
             OverdueCount = dofs.Count(d => d.IsOverdue),
             ClosedCount = dofs.Count(d => d.Status == DofStatus.Kapatildi),
+            UserRole = userRole,
+            UserFullName = currentUser?.FullName ?? User.Identity?.Name ?? "",
+            DepartmentName = departmentName,
             ByDepartment = dofs
                 .GroupBy(d => d.Department != null ? d.Department.Name : "Bilinmiyor")
                 .Select(g => new DepartmentStat { DepartmentName = g.Key, Count = g.Count() })
@@ -46,7 +76,20 @@ public class HomeController : Controller
                 .GroupBy(d => d.Status)
                 .Select(g => new StatusStat { StatusName = g.Key.ToString(), Count = g.Count() })
                 .OrderByDescending(x => x.Count)
-                .ToList()
+                .ToList(),
+            UrgentDofs = dofs
+                .Where(d => d.Status != DofStatus.Kapatildi && d.Status != DofStatus.Reddedildi)
+                .OrderBy(d => d.IsOverdue ? 0 : 1)
+                .ThenBy(d => d.DueDate ?? DateTime.MaxValue)
+                .Take(5)
+                .ToList(),
+            RecentDofs = dofs
+                .OrderByDescending(d => d.CreatedAt)
+                .Take(5)
+                .ToList(),
+            MyOpenedCount = dofs.Count(d => d.CreatedByUserId == currentUserId),
+            MyAssignedCount = dofs.Count(d => d.AssignedToUserId == currentUserId),
+            PendingActionsCount = dofs.SelectMany(d => d.Actions).Count(a => !a.IsCompleted)
         };
 
         return View(model);

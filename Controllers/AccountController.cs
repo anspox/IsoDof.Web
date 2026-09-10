@@ -36,7 +36,9 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var user = await _context.AppUsers.FirstOrDefaultAsync(u => u.Email == model.Email);
+        var user = await _context.AppUsers
+            .Include(u => u.Department)
+            .FirstOrDefaultAsync(u => u.Email == model.Email);
 
         if (user == null || string.IsNullOrEmpty(user.PasswordHash))
         {
@@ -59,7 +61,16 @@ public class AccountController : Controller
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
-        }; 
+        };
+
+        if (user.DepartmentId.HasValue)
+        {
+            claims.Add(new Claim("DepartmentId", user.DepartmentId.Value.ToString()));
+            if (user.Department != null)
+            {
+                claims.Add(new Claim("DepartmentName", user.Department.Name));
+            }
+        }
 
         var identity = new ClaimsIdentity(claims, "Cookies");
         var principal = new ClaimsPrincipal(identity);

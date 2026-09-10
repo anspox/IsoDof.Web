@@ -46,9 +46,19 @@ public class Dof
     public DateTime? DueDate { get; set; }
     public DateTime? ClosedAt { get; set; }
 
+    // --- Arşivleme (soft delete) ---
+    public bool IsArchived { get; set; }
+    public DateTime? ArchivedAt { get; set; }
+    public int? ArchivedByUserId { get; set; }
+    [ForeignKey(nameof(ArchivedByUserId))]
+    public AppUser? ArchivedByUser { get; set; }
+    [MaxLength(500)]
+    public string? ArchiveReason { get; set; }
+
     public ICollection<DofAction> Actions { get; set; } = new List<DofAction>();
     public ICollection<DofComment> Comments { get; set; } = new List<DofComment>();
-    public ICollection<DofAttachment> Attachments { get; set; } = new List<DofAttachment>();    
+    public ICollection<DofAttachment> Attachments { get; set; } = new List<DofAttachment>();
+    public ICollection<DofStatusHistory> StatusHistory { get; set; } = new List<DofStatusHistory>();
     public bool IsOverdue => DueDate.HasValue && DateTime.UtcNow > DueDate.Value && Status != DofStatus.Kapatildi && Status != DofStatus.Reddedildi;
 
 }
