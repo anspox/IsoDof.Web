@@ -254,11 +254,21 @@ public class DofsController : Controller
                 var assignedUser = await _context.AppUsers.FindAsync(notifyId);
                 if (assignedUser != null)
                 {
-                    await _emailService.SendEmailAsync(
-                        assignedUser.Email,
-                        $"Yeni DÖF Atandı: {dof.Title}",
-                        $"Merhaba {assignedUser.FullName},\n\n\"{dof.Title}\" başlıklı DÖF kaydı size atandı.\n\nDetaylar için sisteme giriş yapabilirsiniz."
-                    );
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _emailService.SendEmailAsync(
+                                assignedUser.Email,
+                                $"Yeni DÖF Atandı: {dof.Title}",
+                                $"Merhaba {assignedUser.FullName},\n\n\"{dof.Title}\" başlıklı DÖF kaydı size atandı.\n\nDetaylar için sisteme giriş yapabilirsiniz."
+                            );
+                        }
+                        catch
+                        {
+                            // Background email gönderim hatası ana akışı etkilemez
+                        }
+                    });
                 }
 
                 if (notifyId != CurrentUserId)

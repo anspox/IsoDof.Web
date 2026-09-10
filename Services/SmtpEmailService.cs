@@ -25,13 +25,21 @@ public class SmtpEmailService : IEmailService
         var username = smtpSection["Username"];
         var password = smtpSection["Password"];
 
+        // Eğer SMTP şifresi veya sunucu ayarı yapılmamışsa Gmail'e bağlanıp 30 saniye bekletme!
+        if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(password))
+        {
+            _logger.LogInformation("SMTP şifresi yapılandırılmadığı için e-posta gönderimi simüle edildi: {ToEmail} - {Subject}", toEmail, subject);
+            return;
+        }
+
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(fromName, fromEmail));
+        message.From.Add(new MailboxAddress(fromName ?? "ISO DÖF", fromEmail ?? "noreply@isodof.com"));
         message.To.Add(MailboxAddress.Parse(toEmail));
         message.Subject = subject;
         message.Body = new TextPart("plain") { Text = body };
 
         using var client = new SmtpClient();
+        client.Timeout = 3000; // En fazla 3 saniye bekle
         try
         {
             await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
@@ -43,7 +51,7 @@ public class SmtpEmailService : IEmailService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Mail gönderilirken hata oluştu: {ToEmail}", toEmail);
+            _logger.LogWarning("Mail gönderilemedi (zaman aşımı veya kimlik doğrulama): {Message}", ex.Message);
         }
     }
 }
