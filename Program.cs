@@ -54,6 +54,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseMiddleware<IsoDof.Web.Middleware.RequestTimingMiddleware>();
+
 app.UseRouting();
 
 app.UseAuthentication();

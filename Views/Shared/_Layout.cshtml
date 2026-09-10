@@ -254,6 +254,100 @@
         </main>
     }
 
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        <!-- FLOATING DEBUG PERFORMANCE PILL -->
+        <div id="perfBadge" class="fixed bottom-4 right-4 z-50 font-mono text-xs select-none">
+            <button id="perfToggleBtn" onclick="togglePerfDetails()" 
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low/90 backdrop-blur-md border border-white/[0.08] shadow-lg hover:border-primary/40 transition-all cursor-pointer group">
+                <span class="relative flex h-2 w-2">
+                    <span id="perfPing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span id="perfDot" class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+                <span class="text-white/80 group-hover:text-white font-medium flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px] text-primary">speed</span>
+                    <span id="perfTimeText">-- ms</span>
+                </span>
+            </button>
+
+            <!-- POPUP DETAILS CARD -->
+            <div id="perfPopup" class="hidden absolute bottom-11 right-0 w-72 p-4 rounded-xl bg-surface-container-low border border-white/[0.1] shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                    <div class="flex items-center gap-1.5 text-primary text-xs font-semibold">
+                        <span class="material-symbols-outlined text-[16px]">timer</span>
+                        <span>İşlem Performans Takibi</span>
+                    </div>
+                    <button onclick="togglePerfDetails()" class="text-outline hover:text-white text-xs p-0.5 cursor-pointer">✕</button>
+                </div>
+                <div class="space-y-2 text-[11px]">
+                    <div class="flex items-center justify-between">
+                        <span class="text-outline">Sunucu İşleme:</span>
+                        <span id="perfServerTime" class="text-white font-semibold">-- ms</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-outline">Sayfa Oluşumu (DOM):</span>
+                        <span id="perfDomTime" class="text-white font-semibold">-- ms</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-outline">Toplam Yanıt Süresi:</span>
+                        <span id="perfTotalTime" class="text-primary font-semibold">-- ms</span>
+                    </div>
+                    <div class="pt-2 border-t border-white/[0.04] text-[10px] text-outline flex items-center justify-between">
+                        <span>Terminal Log:</span>
+                        <span class="text-emerald-400 font-mono">[PERF] Aktif</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    let serverMs = null;
+                    const navEntries = performance.getEntriesByType('navigation');
+                    if (navEntries && navEntries.length > 0) {
+                        const nav = navEntries[0];
+                        const serverTiming = nav.serverTiming;
+                        if (serverTiming && serverTiming.length > 0) {
+                            const totalTiming = serverTiming.find(t => t.name === 'total' || t.name === 'app');
+                            if (totalTiming) serverMs = Math.round(totalTiming.duration);
+                        }
+                        if (!serverMs) {
+                            serverMs = Math.max(1, Math.round(nav.responseStart - nav.requestStart));
+                        }
+                        const domTime = Math.max(1, Math.round(nav.domContentLoadedEventEnd - nav.responseEnd));
+                        const totalLoad = Math.max(1, Math.round(nav.duration));
+
+                        const timeText = document.getElementById('perfTimeText');
+                        const serverText = document.getElementById('perfServerTime');
+                        const domText = document.getElementById('perfDomTime');
+                        const totalText = document.getElementById('perfTotalTime');
+                        const dot = document.getElementById('perfDot');
+                        const ping = document.getElementById('perfPing');
+
+                        if (timeText) timeText.textContent = `${serverMs} ms`;
+                        if (serverText) serverText.textContent = `${serverMs} ms`;
+                        if (domText) domText.textContent = `${domTime} ms`;
+                        if (totalText) totalText.textContent = `${totalLoad} ms`;
+
+                        if (serverMs >= 800) {
+                            if (dot) dot.className = 'relative inline-flex rounded-full h-2 w-2 bg-rose-500';
+                            if (ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75';
+                        } else if (serverMs >= 300) {
+                            if (dot) dot.className = 'relative inline-flex rounded-full h-2 w-2 bg-amber-400';
+                            if (ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
+                        }
+                    }
+                }, 150);
+            });
+
+            function togglePerfDetails() {
+                const popup = document.getElementById('perfPopup');
+                if (popup) popup.classList.toggle('hidden');
+            }
+        </script>
+    }
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
