@@ -17,10 +17,34 @@ public class DofActionsController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var actions = await _context.DofActions
+        var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        int currentUserId = int.TryParse(currentUserIdStr, out var uid) ? uid : 0;
+        var currentUser = await _context.AppUsers.FindAsync(currentUserId);
+
+        var query = _context.DofActions
             .Include(a => a.Dof)
+                .ThenInclude(d => d!.Department)
             .Include(a => a.ResponsibleUser)
-            .ToListAsync();
+            .AsQueryable();
+
+        if (User.IsInRole("Admin"))
+        {
+            // Admin sees all
+        }
+        else if (User.IsInRole("KaliteKontrol") && currentUser?.DepartmentId is int deptId)
+        {
+            query = query.Where(a => a.Dof != null && a.Dof.DepartmentId == deptId);
+        }
+        else
+        {
+            query = query.Where(a => a.ResponsibleUserId == currentUserId || (a.Dof != null && (a.Dof.CreatedByUserId == currentUserId || a.Dof.AssignedToUserId == currentUserId)));
+        }
+
+        var actions = await query.OrderByDescending(a => a.Id).ToListAsync();
+
+        ViewBag.Dofs = new SelectList(_context.Dofs.Where(d => !d.IsArchived).OrderByDescending(d => d.Id), "Id", "Title");
+        ViewBag.Users = new SelectList(_context.AppUsers.OrderBy(u => u.FullName), "Id", "FullName");
+
         return View(actions);
     }
 

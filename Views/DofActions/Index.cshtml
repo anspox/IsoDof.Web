@@ -1,53 +1,355 @@
 @model IEnumerable<IsoDof.Web.Models.Entities.DofAction>
 
 @{
-    ViewData["Title"] = "Faaliyet Adımları";
+    ViewData["Title"] = "Action Steps & Tasks";
+    var actionList = Model.ToList();
+    var totalCount = actionList.Count;
+    var completedCount = actionList.Count(a => a.IsCompleted);
+    var inProgressCount = actionList.Count(a => !a.IsCompleted);
+    var completedRate = totalCount > 0 ? (completedCount * 100 / totalCount) : 100;
 }
 
-<h1>Faaliyet Adımları</h1>
+<div class="max-w-7xl mx-auto flex flex-col gap-6 text-on-surface">
+    <!-- Clean Modern Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight text-white">Action Steps &amp; Tasks</h1>
+            <p class="text-sm text-slate-400 mt-1">DÖF ve uygunsuzluk kayıtlarına bağlı düzeltici ve önleyici faaliyet adımları.</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+            <button class="p-2 rounded-lg border border-white/[0.06] bg-white/[0.02] text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all" title="Filter Actions" type="button">
+                <span class="material-symbols-outlined text-[19px]">tune</span>
+            </button>
+            <button class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-fixed-dim text-slate-950 text-sm font-semibold rounded-lg shadow-sm transition-all cursor-pointer" onclick="document.getElementById('newActionModal').classList.remove('hidden')" type="button">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>New Action</span>
+            </button>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Yeni Faaliyet</a>
-</p>
+    <!-- Airy KPI Stat Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Card 1: Total Actions -->
+        <div class="bg-surface-container border border-white/[0.06] rounded-xl p-5 flex flex-col justify-between shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium uppercase tracking-wider text-slate-400">Total Actions</span>
+                <span class="material-symbols-outlined text-slate-500 text-[20px]">assignment</span>
+            </div>
+            <div class="mt-4 flex items-baseline gap-3">
+                <span class="text-3xl font-semibold tracking-tight text-white">@totalCount</span>
+                <span class="text-xs font-medium text-primary flex items-center gap-0.5">
+                    <span class="material-symbols-outlined text-[14px]">task_alt</span>Aktif Liste
+                </span>
+            </div>
+        </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>DÖF</th>
-            <th>Açıklama</th>
-            <th>Sorumlu</th>
-            <th>Durum</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var action in Model)
-        {
-            <tr>
-                <td>@(action.Dof?.Title ?? "-")</td>
-                <td>@action.Description</td>
-                <td>@(action.ResponsibleUser?.FullName ?? "-")</td>
-                <td>
-                    @if (action.IsCompleted)
-                    {
-                        <span class="badge bg-success">Tamamlandı</span>
+        <!-- Card 2: In Progress -->
+        <div class="bg-surface-container border border-white/[0.06] rounded-xl p-5 flex flex-col justify-between shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium uppercase tracking-wider text-slate-400">In Progress (Açık)</span>
+                <span class="material-symbols-outlined text-slate-500 text-[20px]">pending</span>
+            </div>
+            <div class="mt-4 flex items-baseline gap-3">
+                <span class="text-3xl font-semibold tracking-tight text-white">@inProgressCount</span>
+                <span class="text-xs font-medium text-amber-400/90 bg-amber-400/10 px-2 py-0.5 rounded-full">
+                    Aksiyon Bekliyor
+                </span>
+            </div>
+        </div>
+
+        <!-- Card 3: Completed -->
+        <div class="bg-surface-container border border-white/[0.06] rounded-xl p-5 flex flex-col justify-between shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium uppercase tracking-wider text-slate-400">Completed (Tamamlanan)</span>
+                <span class="material-symbols-outlined text-slate-500 text-[20px]">check_circle</span>
+            </div>
+            <div class="mt-4 flex items-baseline gap-3">
+                <span class="text-3xl font-semibold tracking-tight text-white">@completedCount</span>
+                <span class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                    %@completedRate Tamamlandı
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Table Section -->
+    <div class="bg-surface-container border border-white/[0.06] rounded-xl overflow-hidden flex flex-col shadow-sm">
+        <!-- Filter Tabs & Table Search -->
+        <div class="p-4 border-b border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-1 bg-surface-container-lowest p-1 rounded-lg w-full sm:w-auto">
+                <button class="status-tab px-3.5 py-1.5 rounded-md text-xs font-medium bg-white/[0.08] text-white transition-all cursor-pointer" data-filter="all">All (@totalCount)</button>
+                <button class="status-tab px-3.5 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white hover:bg-white/[0.03] transition-all cursor-pointer" data-filter="in_progress">In Progress (@inProgressCount)</button>
+                <button class="status-tab px-3.5 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white hover:bg-white/[0.03] transition-all cursor-pointer" data-filter="completed">Completed (@completedCount)</button>
+            </div>
+            <div class="relative w-full sm:w-64">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[16px]">search</span>
+                <input class="w-full bg-surface-container-lowest border border-white/[0.06] rounded-lg py-1.5 pl-8 pr-3 text-xs text-on-surface placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-all"
+                       id="actionTableSearch" placeholder="Search tasks or assignee..." type="text" />
+            </div>
+        </div>
+
+        <!-- Clean Table -->
+        <div class="overflow-x-auto w-full">
+            @if (!actionList.Any())
+            {
+                <div class="py-16 text-center text-xs text-slate-400">
+                    <span class="material-symbols-outlined text-3xl text-slate-500 block mb-2">task</span>
+                    Henüz listelenecek bir faaliyet adımı bulunmamaktadır.
+                </div>
+            }
+            else
+            {
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/[0.06] text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            <th class="py-3 px-5">Task / Description</th>
+                            <th class="py-3 px-4">Department</th>
+                            <th class="py-3 px-4">Assignee</th>
+                            <th class="py-3 px-4">Due Date</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-5 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/[0.04] text-sm text-slate-200" id="actionTableBody">
+                        @foreach (var action in actionList)
+                        {
+                            var statusType = action.IsCompleted ? "completed" : "in_progress";
+                            <tr class="hover:bg-white/[0.02] transition-colors group" data-status="@statusType">
+                                <td class="py-4 px-5 max-w-md">
+                                    <div class="flex flex-col gap-1">
+                                        <span class="font-medium text-white group-hover:text-primary transition-colors leading-snug @(action.IsCompleted ? "line-through opacity-70" : "")">
+                                            @action.Description
+                                        </span>
+                                        <div class="flex items-center gap-2 text-xs text-slate-400">
+                                            <span class="font-mono text-primary/80">#ACT-@action.Id</span>
+                                            <span class="text-white/20">·</span>
+                                            @if (action.Dof != null)
+                                            {
+                                                <button class="hover:text-secondary hover:underline transition-colors font-mono cursor-pointer"
+                                                        onclick="openCapaDrawer('CAPA-@action.Dof.Id.ToString("D3")', '@Html.Raw(JavaScriptEncoder.Default.Encode(action.Dof.Title))', '@Html.Raw(JavaScriptEncoder.Default.Encode(action.Dof.Description))', '@action.Dof.Status', 'Kaynak: @action.Dof.Source')">
+                                                    #CAPA-@action.Dof.Id.ToString("D3")
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4 text-xs text-slate-400 whitespace-nowrap">
+                                    @(action.Dof?.Department?.Name ?? "-")
+                                </td>
+                                <td class="py-4 px-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-mono font-semibold">
+                                            @(action.ResponsibleUser?.FullName?.Length > 0 ? action.ResponsibleUser.FullName.Substring(0, 1).ToUpper() : "?")
+                                        </div>
+                                        <span class="text-xs font-medium text-slate-300">
+                                            @(action.ResponsibleUser?.FullName ?? "Atanmadı")
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4 text-xs whitespace-nowrap">
+                                    @if (action.DueDate.HasValue)
+                                    {
+                                        <span class="@(action.DueDate.Value.Date < DateTime.UtcNow.Date && !action.IsCompleted ? "text-rose-400 font-medium" : "text-slate-400")">
+                                            @action.DueDate.Value.ToString("dd.MM.yyyy")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-slate-500">—</span>
+                                    }
+                                </td>
+                                <td class="py-4 px-4 whitespace-nowrap">
+                                    @if (action.IsCompleted)
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                            Completed
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                                            In Progress
+                                        </span>
+                                    }
+                                </td>
+                                <td class="py-4 px-5 text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-2">
+                                        @if (!action.IsCompleted)
+                                        {
+                                            <form asp-action="Complete" asp-route-id="@action.Id" method="post" class="inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="px-2.5 py-1 text-xs font-semibold text-slate-950 bg-primary hover:bg-primary-fixed-dim rounded-md transition-all cursor-pointer">
+                                                    Complete
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (action.Dof != null)
+                                        {
+                                            <a asp-controller="Dofs" asp-action="Details" asp-route-id="@action.Dof.Id" class="px-2.5 py-1 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] rounded-md transition-all">
+                                                View CAPA
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <!-- Minimalist Pagination Footer -->
+        <div class="px-5 py-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
+            <span>Toplam <span class="text-slate-200 font-medium">@totalCount</span> faaliyet listeleniyor</span>
+            <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded text-white bg-white/[0.08] font-medium font-mono">1</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CAPA Drawer Context -->
+<div class="hidden fixed inset-0 z-50 overflow-hidden" id="capaDrawer">
+    <div class="absolute inset-0 bg-surface-container-lowest/80 backdrop-blur-sm transition-opacity" onclick="closeCapaDrawer()"></div>
+    <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+        <div class="w-screen max-w-md bg-surface-container border-l border-white/[0.08] shadow-2xl flex flex-col justify-between">
+            <div class="p-5 border-b border-white/[0.06] flex items-center justify-between">
+                <div>
+                    <span class="font-mono text-xs text-primary font-semibold" id="drawerCapaId">#CAPA-000</span>
+                    <h2 class="text-base font-semibold text-white mt-0.5" id="drawerCapaTitle">DÖF Başlığı</h2>
+                </div>
+                <button class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer" onclick="closeCapaDrawer()" type="button">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            <div class="p-5 flex-1 overflow-y-auto space-y-5">
+                <div>
+                    <span class="text-xs uppercase tracking-wider font-medium text-slate-400">Uygunsuzluk Tanımı</span>
+                    <p class="text-sm text-slate-300 mt-1 leading-relaxed" id="drawerCapaDesc">Açıklama yükleniyor...</p>
+                </div>
+                <div class="p-4 bg-surface-container-lowest border border-white/[0.04] rounded-xl flex flex-col gap-1">
+                    <span class="text-xs uppercase tracking-wider font-medium text-slate-400">Durum Değerlendirmesi</span>
+                    <span class="font-mono text-sm text-amber-400 font-semibold" id="drawerCapaSeverity">Aktif</span>
+                    <p class="text-xs text-slate-400 mt-1" id="drawerCapaRootCause">Kök Neden</p>
+                </div>
+            </div>
+            <div class="p-5 border-t border-white/[0.06] flex items-center gap-3">
+                <button class="flex-1 py-2 px-4 border border-white/[0.08] hover:bg-white/[0.04] text-slate-300 text-sm font-medium rounded-lg transition-all cursor-pointer" onclick="closeCapaDrawer()" type="button">Kapat</button>
+                <a id="drawerFullDossierLink" href="#" class="flex-1 py-2 px-4 bg-primary text-slate-950 hover:bg-primary-fixed-dim text-sm font-semibold rounded-lg transition-all text-center">DÖF Detayına Git</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: New Action Step -->
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" id="newActionModal">
+    <div class="absolute inset-0 bg-surface-container-lowest/80 backdrop-blur-sm" onclick="document.getElementById('newActionModal').classList.add('hidden')"></div>
+    <div class="relative bg-surface-container border border-white/[0.08] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden z-10">
+        <div class="p-5 border-b border-white/[0.06] flex items-center justify-between">
+            <h3 class="text-base font-semibold text-white">Yeni Faaliyet Adımı Oluştur</h3>
+            <button class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer" onclick="document.getElementById('newActionModal').classList.add('hidden')" type="button">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <form asp-action="Create" method="post" class="p-5 space-y-4">
+            @Html.AntiForgeryToken()
+            <div>
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Bağlı DÖF Kaydı <span class="text-primary">*</span></label>
+                <select name="DofId" asp-items="ViewBag.Dofs" required
+                        class="w-full bg-surface-container-lowest border border-white/[0.08] rounded-lg p-2.5 text-sm text-white focus:ring-1 focus:ring-primary focus:outline-none">
+                    <option value="">-- DÖF Seçiniz --</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Faaliyet / Görev Tanımı <span class="text-primary">*</span></label>
+                <input name="Description" class="w-full bg-surface-container-lowest border border-white/[0.08] rounded-lg p-2.5 text-sm text-white placeholder-slate-500 focus:ring-1 focus:ring-primary focus:outline-none"
+                       placeholder="Örn: Otomatik optik muayene sensörlerini yeniden kalibre et" required type="text" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Sorumlu Kişi</label>
+                    <select name="ResponsibleUserId" asp-items="ViewBag.Users"
+                            class="w-full bg-surface-container-lowest border border-white/[0.08] rounded-lg p-2.5 text-sm text-white focus:ring-1 focus:ring-primary focus:outline-none">
+                        <option value="">-- Sorumlu Seçiniz --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Termin Tarihi</label>
+                    <input name="DueDate" class="w-full bg-surface-container-lowest border border-white/[0.08] rounded-lg p-2.5 text-sm text-white focus:ring-1 focus:ring-primary focus:outline-none"
+                           type="date" min="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+                </div>
+            </div>
+            <div class="pt-2 flex items-center justify-end gap-2.5">
+                <button class="px-4 py-2 text-sm text-slate-400 hover:text-white transition-all cursor-pointer" onclick="document.getElementById('newActionModal').classList.add('hidden')" type="button">Vazgeç</button>
+                <button class="px-4 py-2 bg-primary hover:bg-primary-fixed-dim text-slate-950 font-semibold text-sm rounded-lg transition-all cursor-pointer" type="submit">Faaliyet Oluştur</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Tab Filter Switching
+        const tabs = document.querySelectorAll('.status-tab');
+        const rows = document.querySelectorAll('#actionTableBody tr');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('bg-white/[0.08]', 'text-white');
+                    t.classList.add('text-slate-400');
+                });
+                tab.classList.add('bg-white/[0.08]', 'text-white');
+                tab.classList.remove('text-slate-400');
+
+                const filter = tab.getAttribute('data-filter');
+                rows.forEach(row => {
+                    const rowStatus = row.getAttribute('data-status');
+                    if (filter === 'all' || rowStatus === filter) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
                     }
-                    else
-                    {
-                        <span class="badge bg-warning text-dark">Bekliyor</span>
-                    }
-                </td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@action.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
-                    <a asp-action="Delete" asp-route-id="@action.Id" class="btn btn-sm btn-outline-danger">Sil</a>
-                    @if (!action.IsCompleted)
-                    {
-                        <form asp-action="Complete" asp-route-id="@action.Id" method="post" style="display:inline">
-                            <button type="submit" class="btn btn-sm btn-success">Tamamla</button>
-                        </form>
-                    }
-                </td>
-            </tr>
+                });
+            });
+        });
+
+        // Real-time Table Text Search
+        const searchInput = document.getElementById('actionTableSearch');
+        const tableBody = document.getElementById('actionTableBody');
+        if (searchInput && tableBody) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                const trs = tableBody.querySelectorAll('tr');
+                trs.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(query) ? '' : 'none';
+                });
+            });
         }
-    </tbody>
-</table>
+
+        // CAPA Drawer Controller
+        function openCapaDrawer(id, title, desc, severity, rootCause) {
+            document.getElementById('drawerCapaId').textContent = id;
+            document.getElementById('drawerCapaTitle').textContent = title;
+            document.getElementById('drawerCapaDesc').textContent = desc;
+            document.getElementById('drawerCapaSeverity').textContent = severity;
+            document.getElementById('drawerCapaRootCause').textContent = rootCause;
+
+            const cleanId = id.replace(/[^0-9]/g, '');
+            const detailLink = document.getElementById('drawerFullDossierLink');
+            if (detailLink && cleanId) {
+                detailLink.href = '@Url.Action("Details", "Dofs")/' + cleanId;
+            }
+
+            document.getElementById('capaDrawer').classList.remove('hidden');
+        }
+
+        function closeCapaDrawer() {
+            document.getElementById('capaDrawer').classList.add('hidden');
+        }
+    </script>
+}
