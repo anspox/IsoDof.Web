@@ -4,9 +4,13 @@ using IsoDof.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 
+using IsoDof.Web.Services.Logging;
+
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddFileLogging("logs");
 
 builder.Services.AddControllersWithViews()
     .AddMvcOptions(options =>
