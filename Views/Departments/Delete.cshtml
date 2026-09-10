@@ -4,22 +4,57 @@
     ViewData["Title"] = "Departman Sil";
 }
 
-<h1>Departman Sil</h1>
+<div class="max-w-xl mx-auto w-full space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="text-xs text-outline flex items-center gap-2 mb-1">
+                <a asp-action="Index" class="hover:text-white transition-colors">Governance</a>
+                <span class="text-white/20">/</span>
+                <span class="text-on-surface font-medium">Departman Sil</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-white tracking-tight">Departmanı Sil</h1>
+            <p class="text-xs text-outline mt-0.5">Bu işlem geri alınamaz. Departmana ait bağlı kayıtları göz önünde bulundurunuz.</p>
+        </div>
+        <a asp-action="Index" class="text-xs text-outline hover:text-white transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Geri Dön</span>
+        </a>
+    </div>
 
-<h3>Bu departmanı silmek istediğine emin misin?</h3>
+    <!-- Confirmation Container -->
+    <div class="bg-surface-container-low border border-white/[0.05] rounded-2xl p-6 sm:p-8 space-y-6">
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-error-container/20 border border-error/30 text-error">
+            <span class="material-symbols-outlined text-[24px]">warning</span>
+            <div class="text-xs leading-relaxed">
+                <strong class="font-semibold">Dikkat:</strong> Bu departmanı silmek istediğinize emin misiniz?
+            </div>
+        </div>
 
-<div>
-    <dl class="row">
-        <dt class="col-sm-2">Ad</dt>
-        <dd class="col-sm-10">@Model.Name</dd>
+        <div class="space-y-4 py-2 border-y border-white/[0.04]">
+            <div class="flex items-center justify-between py-1">
+                <span class="text-xs text-outline font-medium">Departman Adı</span>
+                <span class="text-sm font-semibold text-white">@Model.Name</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+                <span class="text-xs text-outline font-medium">Departman Kodu</span>
+                <span class="font-mono text-xs text-secondary/80">@(string.IsNullOrEmpty(Model.Code) ? "-" : Model.Code)</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+                <span class="text-xs text-outline font-medium">Kalite Kontrol Sorumlusu</span>
+                <span class="text-xs text-on-surface">@(Model.QualityResponsibleUser?.FullName ?? "Atanmamış")</span>
+            </div>
+        </div>
 
-        <dt class="col-sm-2">Kod</dt>
-        <dd class="col-sm-10">@Model.Code</dd>
-    </dl>
-
-    <form asp-action="Delete" method="post">
-        <input type="hidden" asp-for="Id" />
-        <button type="submit" class="btn btn-danger">Evet, Sil</button>
-        <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
-    </form>
+        <form asp-action="Delete" method="post" class="flex items-center justify-end gap-3 pt-2">
+            <input type="hidden" asp-for="Id" />
+            <a asp-action="Index" class="h-9 px-4 rounded-lg text-xs font-medium text-outline hover:text-white transition-colors flex items-center justify-center">
+                Vazgeç
+            </a>
+            <button type="submit" class="h-9 px-5 rounded-lg bg-error text-white font-medium text-xs hover:bg-error/80 transition-colors shadow-sm flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">delete</span>
+                <span>Evet, Departmanı Sil</span>
+            </button>
+        </form>
+    </div>
 </div>

@@ -182,13 +182,13 @@
                         </div>
 
                         <a asp-controller="Departments" asp-action="Index"
-                           class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-white hover:bg-white/[0.04] transition-colors text-sm">
+                           class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Departments" ? "bg-primary/10 text-primary border border-primary/20 font-semibold" : "text-on-surface-variant hover:text-white hover:bg-white/[0.04]")">
                             <span class="material-symbols-outlined text-[1.125rem] opacity-70">corporate_fare</span>
                             <span>Departmanlar</span>
                         </a>
 
                         <a asp-controller="AppUsers" asp-action="Index"
-                           class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-white hover:bg-white/[0.04] transition-colors text-sm">
+                           class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm @(ViewContext.RouteData.Values["Controller"]?.ToString() == "AppUsers" ? "bg-primary/10 text-primary border border-primary/20 font-semibold" : "text-on-surface-variant hover:text-white hover:bg-white/[0.04]")">
                             <span class="material-symbols-outlined text-[1.125rem] opacity-70">group</span>
                             <span>Kullanıcılar</span>
                         </a>

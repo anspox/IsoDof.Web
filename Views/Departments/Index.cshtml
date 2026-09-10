@@ -1,36 +1,205 @@
 @model IEnumerable<IsoDof.Web.Models.Entities.Department>
 
 @{
-    ViewData["Title"] = "Departmanlar";
+    ViewData["Title"] = "Governance - Departmanlar";
+    var deptList = Model.ToList();
+    var totalDepts = deptList.Count;
+    var assignedLeads = deptList.Count(d => d.QualityResponsibleUserId != null);
+    var totalStaff = (int)(ViewBag.TotalUsersCount ?? 0);
+    var leadRatio = totalDepts > 0 ? (int)Math.Round((double)assignedLeads / totalDepts * 100) : 100;
 }
 
-<h1>Departmanlar</h1>
+<div class="flex flex-col w-full space-y-8">
+    <!-- SIMPLIFIED HEADER -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono tracking-wide uppercase bg-primary/10 text-primary border border-primary/20">ISO QMS Scope</span>
+                <span class="text-xs text-outline font-mono">Sec. 5.3 Governance</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-white tracking-tight">Governance</h1>
+            <p class="text-xs text-outline mt-0.5">Manage organizational departments, audit domains, and quality ownership</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="relative w-64">
+                <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[16px]">search</span>
+                <input id="deptSearchInput" 
+                       class="w-full h-9 pl-9 pr-3 text-xs bg-surface-container-low border border-white/[0.06] text-white placeholder:text-outline rounded-lg focus:outline-none focus:border-primary/40 transition-colors" 
+                       placeholder="Search departments or code..." 
+                       type="text"/>
+            </div>
+            <a asp-action="Create" 
+               class="h-9 px-4 flex items-center gap-1.5 rounded-lg bg-primary text-on-primary font-medium text-xs hover:bg-primary-container transition-colors shadow-sm shadow-primary/20 text-decoration-none">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                <span>New Department</span>
+            </a>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Yeni Departman</a>
-</p>
+    <!-- MINIMALIST METRICS ROW -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 border border-white/[0.05] rounded-xl bg-surface-container-low/60 p-1">
+        <div class="p-5 flex flex-col justify-center">
+            <span class="text-xs text-outline font-medium">Total Departments</span>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-3xl font-semibold text-white tracking-tight">@totalDepts</span>
+                <span class="text-xs text-primary font-medium">Audit domains</span>
+            </div>
+        </div>
+        <div class="p-5 flex flex-col justify-center md:border-l border-white/[0.04]">
+            <span class="text-xs text-outline font-medium">Quality Leads</span>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-3xl font-semibold text-white tracking-tight">@assignedLeads</span>
+                <span class="text-xs text-outline font-mono">@leadRatio% accredited</span>
+            </div>
+        </div>
+        <div class="p-5 flex flex-col justify-center md:border-l border-white/[0.04]">
+            <span class="text-xs text-outline font-medium">Personnel Covered</span>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-3xl font-semibold text-white tracking-tight">@totalStaff</span>
+                <span class="text-xs text-secondary font-medium">Staff enrolled</span>
+            </div>
+        </div>
+    </section>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Ad</th>
-            <th>Kod</th>
-            <th>Kalite Kontrol Sorumlusu</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var dept in Model)
-        {
-            <tr>
-                <td>@dept.Name</td>
-                <td>@dept.Code</td>
-                <td>@(dept.QualityResponsibleUser?.FullName ?? "-")</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@dept.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
-                    <a asp-action="Delete" asp-route-id="@dept.Id" class="btn btn-sm btn-outline-danger">Sil</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+    <!-- CLEAN SEGMENTED TABS -->
+    <div class="flex items-center justify-between pt-1">
+        <div class="flex items-center p-1 bg-surface-container-low border border-white/[0.05] rounded-lg">
+            <a asp-controller="Departments" asp-action="Index" 
+               class="px-3.5 py-1.5 rounded-md bg-white/[0.06] text-white text-xs font-medium transition-colors shadow-sm text-decoration-none flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px] text-primary">corporate_fare</span>
+                <span>Departments</span>
+            </a>
+            <a asp-controller="AppUsers" asp-action="Index" 
+               class="px-3.5 py-1.5 rounded-md text-outline hover:text-white text-xs font-medium transition-colors text-decoration-none flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">group</span>
+                <span>Users &amp; Roles</span>
+            </a>
+        </div>
+        <div class="text-xs text-outline font-mono" id="entryCount">@totalDepts entries</div>
+    </div>
+
+    <!-- SLEEK MINIMAL DATA LIST -->
+    <section class="rounded-xl border border-white/[0.05] bg-surface-container-low/40 overflow-hidden">
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left" id="deptTable">
+                <thead>
+                    <tr class="border-b border-white/[0.04] text-[11px] font-medium text-outline uppercase tracking-wider">
+                        <th class="py-3.5 px-6 font-medium">Department</th>
+                        <th class="py-3.5 px-6 font-medium">Code</th>
+                        <th class="py-3.5 px-6 font-medium">Lead QA</th>
+                        <th class="py-3.5 px-6 font-medium">Status</th>
+                        <th class="py-3.5 px-6 font-medium text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/[0.03]" id="deptTableBody">
+                    @if (!deptList.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="py-12 text-center text-outline">
+                                <span class="material-symbols-outlined text-4xl block mx-auto mb-2 opacity-40">corporate_fare</span>
+                                <p class="text-sm">Henüz bir departman tanımlanmamış.</p>
+                                <a asp-action="Create" class="mt-3 inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+                                    <span class="material-symbols-outlined text-[14px]">add</span> Yeni Departman Ekle
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var dept in deptList)
+                        {
+                            var hasLead = dept.QualityResponsibleUser != null;
+                            <tr class="hover:bg-white/[0.02] transition-colors group dept-row">
+                                <td class="py-4 px-6">
+                                    <div class="text-sm font-medium text-white group-hover:text-primary transition-colors dept-name">@dept.Name</div>
+                                </td>
+                                <td class="py-4 px-6 whitespace-nowrap">
+                                    <span class="font-mono text-xs text-secondary/80 dept-code">
+                                        @(string.IsNullOrWhiteSpace(dept.Code) ? $"DPT-{dept.Id:D2}" : dept.Code)
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6 whitespace-nowrap dept-lead">
+                                    @if (hasLead)
+                                    {
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold text-[10px]">
+                                                @(dept.QualityResponsibleUser!.FullName.Length > 0 ? dept.QualityResponsibleUser.FullName.Substring(0, 1).ToUpper() : "Q")
+                                            </div>
+                                            <span class="text-xs text-on-surface">@dept.QualityResponsibleUser.FullName</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-xs text-outline/60 italic">Unassigned</span>
+                                    }
+                                </td>
+                                <td class="py-4 px-6 whitespace-nowrap">
+                                    @if (hasLead)
+                                    {
+                                        <div class="flex items-center gap-2">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-primary shadow-sm shadow-primary/80"></span>
+                                            <span class="text-xs text-on-surface-variant">Ready</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="flex items-center gap-2">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-tertiary shadow-sm shadow-tertiary/60"></span>
+                                            <span class="text-xs text-tertiary">Review Due</span>
+                                        </div>
+                                    }
+                                </td>
+                                <td class="py-4 px-6 whitespace-nowrap text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <a asp-action="Edit" asp-route-id="@dept.Id" 
+                                           title="Düzenle" 
+                                           class="text-outline hover:text-white p-1.5 rounded-md hover:bg-white/[0.04] transition-colors inline-flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-[18px]">edit</span>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@dept.Id" 
+                                           title="Sil" 
+                                           class="text-outline hover:text-error p-1.5 rounded-md hover:bg-error/10 transition-colors inline-flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        <!-- REFINED MINIMAL FOOTER -->
+        <div class="px-6 py-3 border-t border-white/[0.04] flex items-center justify-between text-xs text-outline">
+            <span id="footerCount">Showing @totalDepts entries</span>
+            <div class="flex items-center gap-1 font-mono text-[10px] text-outline/60">
+                <span>AEGIS Governance Protocol v4.2</span>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('deptSearchInput')?.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#deptTableBody .dept-row');
+            let visible = 0;
+            rows.forEach(row => {
+                const name = row.querySelector('.dept-name')?.textContent.toLowerCase() || '';
+                const code = row.querySelector('.dept-code')?.textContent.toLowerCase() || '';
+                const lead = row.querySelector('.dept-lead')?.textContent.toLowerCase() || '';
+                if (name.includes(query) || code.includes(query) || lead.includes(query)) {
+                    row.style.display = '';
+                    visible++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            const entryCount = document.getElementById('entryCount');
+            const footerCount = document.getElementById('footerCount');
+            if (entryCount) entryCount.textContent = `${visible} entries`;
+            if (footerCount) footerCount.textContent = `Showing ${visible} of ${rows.length}`;
+        });
+    </script>
+}

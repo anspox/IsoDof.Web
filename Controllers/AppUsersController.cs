@@ -20,6 +20,7 @@ public class AppUsersController : Controller
     public async Task<IActionResult> Index()
     {
         var users = await _context.AppUsers.Include(u => u.Department).ToListAsync();
+        ViewBag.TotalDepartmentsCount = await _context.Departments.CountAsync();
         return View(users);
     }
 

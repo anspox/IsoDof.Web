@@ -4,25 +4,61 @@
     ViewData["Title"] = "Kullanıcı Sil";
 }
 
-<h1>Kullanıcı Sil</h1>
+<div class="max-w-xl mx-auto w-full space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="text-xs text-outline flex items-center gap-2 mb-1">
+                <a asp-action="Index" class="hover:text-white transition-colors">Governance</a>
+                <span class="text-white/20">/</span>
+                <span class="text-on-surface font-medium">Kullanıcı Sil</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-white tracking-tight">Kullanıcıyı Sil</h1>
+            <p class="text-xs text-outline mt-0.5">Bu personelin sistem erişimi ve rol yetkileri kaldırılacaktır.</p>
+        </div>
+        <a asp-action="Index" class="text-xs text-outline hover:text-white transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Geri Dön</span>
+        </a>
+    </div>
 
-<h3>Bu kullanıcıyı silmek istediğine emin misin?</h3>
+    <!-- Confirmation Container -->
+    <div class="bg-surface-container-low border border-white/[0.05] rounded-2xl p-6 sm:p-8 space-y-6">
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-error-container/20 border border-error/30 text-error">
+            <span class="material-symbols-outlined text-[24px]">person_remove</span>
+            <div class="text-xs leading-relaxed">
+                <strong class="font-semibold">Dikkat:</strong> Bu kullanıcı hesabını sistemden silmek istediğinize emin misiniz?
+            </div>
+        </div>
 
-<div>
-    <dl class="row">
-        <dt class="col-sm-2">Ad Soyad</dt>
-        <dd class="col-sm-10">@Model.FullName</dd>
+        <div class="space-y-4 py-2 border-y border-white/[0.04]">
+            <div class="flex items-center justify-between py-1">
+                <span class="text-xs text-outline font-medium">Ad Soyad</span>
+                <span class="text-sm font-semibold text-white">@Model.FullName</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+                <span class="text-xs text-outline font-medium">E-Posta</span>
+                <span class="font-mono text-xs text-on-surface">@Model.Email</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+                <span class="text-xs text-outline font-medium">Departman</span>
+                <span class="text-xs text-on-surface">@(Model.Department?.Name ?? "-")</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+                <span class="text-xs text-outline font-medium">Rol</span>
+                <span class="text-xs font-medium text-primary">@Model.Role</span>
+            </div>
+        </div>
 
-        <dt class="col-sm-2">E-posta</dt>
-        <dd class="col-sm-10">@Model.Email</dd>
-
-        <dt class="col-sm-2">Departman</dt>
-        <dd class="col-sm-10">@(Model.Department?.Name ?? "-")</dd>
-    </dl>
-
-    <form asp-action="Delete" method="post">
-        <input type="hidden" asp-for="Id" />
-        <button type="submit" class="btn btn-danger">Evet, Sil</button>
-        <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
-    </form>
+        <form asp-action="Delete" method="post" class="flex items-center justify-end gap-3 pt-2">
+            <input type="hidden" asp-for="Id" />
+            <a asp-action="Index" class="h-9 px-4 rounded-lg text-xs font-medium text-outline hover:text-white transition-colors flex items-center justify-center">
+                Vazgeç
+            </a>
+            <button type="submit" class="h-9 px-5 rounded-lg bg-error text-white font-medium text-xs hover:bg-error/80 transition-colors shadow-sm flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">delete</span>
+                <span>Evet, Kullanıcıyı Sil</span>
+            </button>
+        </form>
+    </div>
 </div>

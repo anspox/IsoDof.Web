@@ -1,36 +1,73 @@
 @model IsoDof.Web.Models.Entities.Department
 
 @{
-    ViewData["Title"] = "Departman Ekle";
+    ViewData["Title"] = "Yeni Departman Ekle";
 }
 
-<h1>Departman Ekle</h1>
-
-<form asp-action="Create" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-    <div class="form-group">
-        <label asp-for="Name" class="control-label">Ad</label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+<div class="max-w-2xl mx-auto w-full space-y-6">
+    <!-- Breadcrumb & Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="text-xs text-outline flex items-center gap-2 mb-1">
+                <a asp-action="Index" class="hover:text-white transition-colors">Governance</a>
+                <span class="text-white/20">/</span>
+                <a asp-action="Index" class="hover:text-white transition-colors">Departmanlar</a>
+                <span class="text-white/20">/</span>
+                <span class="text-on-surface font-medium">Yeni Departman</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-white tracking-tight">Yeni Departman Tanımla</h1>
+            <p class="text-xs text-outline mt-0.5">Organizasyon yapısına yeni bir operasyonel veya idari departman ekleyin.</p>
+        </div>
+        <a asp-action="Index" class="text-xs text-outline hover:text-white transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Geri Dön</span>
+        </a>
     </div>
 
-    <div class="form-group">
-        <label asp-for="Code" class="control-label">Kod</label>
-        <input asp-for="Code" class="form-control" />
-        <span asp-validation-for="Code" class="text-danger"></span>
-    </div>
+    <!-- Form Container -->
+    <div class="bg-surface-container-low border border-white/[0.05] rounded-2xl p-6 sm:p-8">
+        <form asp-action="Create" method="post" class="space-y-5">
+            <div asp-validation-summary="ModelOnly" class="text-xs text-error p-3 rounded-lg bg-error-container/10 border border-error/20 mb-4"></div>
 
-    <div class="form-group">
-        <label asp-for="QualityResponsibleUserId" class="control-label">Kalite Kontrol Sorumlusu</label>
-        <select asp-for="QualityResponsibleUserId" asp-items="ViewBag.Users" class="form-control">
-            <option value="">-- Seçiniz --</option>
-        </select>
-        <span asp-validation-for="QualityResponsibleUserId" class="text-danger"></span>
-    </div>
+            <div class="space-y-1.5">
+                <label asp-for="Name" class="text-xs font-medium text-outline uppercase tracking-wider block">Departman Adı</label>
+                <input asp-for="Name" 
+                       placeholder="Örn: Biyoproses ve Hücre Üretimi" 
+                       class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] text-white placeholder:text-outline/50 rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors" />
+                <span asp-validation-for="Name" class="text-[11px] text-error"></span>
+            </div>
 
-    <div class="form-group mt-3">
-        <button type="submit" class="btn btn-primary">Kaydet</button>
-        <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
+            <div class="space-y-1.5">
+                <label asp-for="Code" class="text-xs font-medium text-outline uppercase tracking-wider block">Departman Kodu</label>
+                <input asp-for="Code" 
+                       placeholder="Örn: DPT-BIO-01" 
+                       class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] font-mono text-white placeholder:text-outline/50 rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors" />
+                <span asp-validation-for="Code" class="text-[11px] text-error"></span>
+            </div>
+
+            <div class="space-y-1.5">
+                <label asp-for="QualityResponsibleUserId" class="text-xs font-medium text-outline uppercase tracking-wider block">Kalite Kontrol Sorumlusu</label>
+                <select asp-for="QualityResponsibleUserId" asp-items="ViewBag.Users" 
+                        class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] text-white rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors">
+                    <option value="">-- Henüz Atanmadı (Seçiniz) --</option>
+                </select>
+                <span asp-validation-for="QualityResponsibleUserId" class="text-[11px] text-error"></span>
+                <p class="text-[11px] text-outline/70">Bu departmana açılan DÖF kayıtlarının nihai onayını yürütecek kalite uzmanını seçin.</p>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-white/[0.04]">
+                <a asp-action="Index" class="h-9 px-4 rounded-lg text-xs font-medium text-outline hover:text-white transition-colors flex items-center justify-center">
+                    Vazgeç
+                </a>
+                <button type="submit" class="h-9 px-5 rounded-lg bg-primary text-on-primary font-medium text-xs hover:bg-primary-container transition-colors shadow-sm shadow-primary/20 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">check</span>
+                    <span>Departmanı Kaydet</span>
+                </button>
+            </div>
+        </form>
     </div>
-</form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

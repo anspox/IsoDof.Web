@@ -22,6 +22,8 @@ public class DepartmentsController : Controller
         var departments = await _context.Departments
             .Include(d => d.QualityResponsibleUser)
             .ToListAsync();
+        ViewBag.TotalUsersCount = await _context.AppUsers.CountAsync();
+        ViewBag.TotalQALeadsCount = await _context.AppUsers.CountAsync(u => u.Role == IsoDof.Web.Models.Entities.Enums.UserRole.KaliteKontrol);
         return View(departments);
     }
 

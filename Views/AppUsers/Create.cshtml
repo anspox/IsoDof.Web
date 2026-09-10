@@ -1,50 +1,93 @@
 @model IsoDof.Web.Models.Entities.AppUser
 
 @{
-    ViewData["Title"] = "Kullanıcı Ekle";
+    ViewData["Title"] = "Yeni Kullanıcı Ekle";
 }
 
-<h1>Kullanıcı Ekle</h1>
-
-<form asp-action="Create" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-    <div class="form-group">
-        <label asp-for="FullName" class="control-label">Ad Soyad</label>
-        <input asp-for="FullName" class="form-control" />
-        <span asp-validation-for="FullName" class="text-danger"></span>
+<div class="max-w-2xl mx-auto w-full space-y-6">
+    <!-- Breadcrumb & Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="text-xs text-outline flex items-center gap-2 mb-1">
+                <a asp-action="Index" class="hover:text-white transition-colors">Governance</a>
+                <span class="text-white/20">/</span>
+                <a asp-action="Index" class="hover:text-white transition-colors">Kullanıcılar</a>
+                <span class="text-white/20">/</span>
+                <span class="text-on-surface font-medium">Yeni Kullanıcı</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-white tracking-tight">Yeni Kullanıcı Tanımla</h1>
+            <p class="text-xs text-outline mt-0.5">Sisteme yeni personel ekleyin, departman ve yetki rolünü belirleyin.</p>
+        </div>
+        <a asp-action="Index" class="text-xs text-outline hover:text-white transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Geri Dön</span>
+        </a>
     </div>
 
-    <div class="form-group">
-        <label asp-for="Email" class="control-label">E-posta</label>
-        <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
+    <!-- Form Container -->
+    <div class="bg-surface-container-low border border-white/[0.05] rounded-2xl p-6 sm:p-8">
+        <form asp-action="Create" method="post" class="space-y-5">
+            <div asp-validation-summary="ModelOnly" class="text-xs text-error p-3 rounded-lg bg-error-container/10 border border-error/20 mb-4"></div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label asp-for="FullName" class="text-xs font-medium text-outline uppercase tracking-wider block">Ad Soyad</label>
+                    <input asp-for="FullName" 
+                           placeholder="Örn: Dr. Eleanor Vance" 
+                           class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] text-white placeholder:text-outline/50 rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors" />
+                    <span asp-validation-for="FullName" class="text-[11px] text-error"></span>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label asp-for="Email" class="text-xs font-medium text-outline uppercase tracking-wider block">E-Posta Adresi</label>
+                    <input asp-for="Email" 
+                           type="email"
+                           placeholder="eleanor.vance@isodof.com" 
+                           class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] font-mono text-white placeholder:text-outline/50 rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors" />
+                    <span asp-validation-for="Email" class="text-[11px] text-error"></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label asp-for="DepartmentId" class="text-xs font-medium text-outline uppercase tracking-wider block">Bağlı Departman</label>
+                    <select asp-for="DepartmentId" asp-items="ViewBag.Departments" 
+                            class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] text-white rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors">
+                        <option value="">-- Departman Seçiniz --</option>
+                    </select>
+                    <span asp-validation-for="DepartmentId" class="text-[11px] text-error"></span>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label asp-for="Role" class="text-xs font-medium text-outline uppercase tracking-wider block">Sistem Rolü</label>
+                    <select asp-for="Role" asp-items="Html.GetEnumSelectList<IsoDof.Web.Models.Entities.Enums.UserRole>()" 
+                            class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] text-white rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors">
+                    </select>
+                    <span asp-validation-for="Role" class="text-[11px] text-error"></span>
+                </div>
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="text-xs font-medium text-outline uppercase tracking-wider block">Giriş Şifresi</label>
+                <input type="password" name="password" 
+                       placeholder="••••••••••••"
+                       class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] text-white placeholder:text-outline/50 rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors" />
+                <span class="text-[11px] text-error">@Html.ValidationMessage("Password")</span>
+                <p class="text-[11px] text-outline/70">Kullanıcının sisteme ilk girişinde kullanacağı şifre.</p>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-white/[0.04]">
+                <a asp-action="Index" class="h-9 px-4 rounded-lg text-xs font-medium text-outline hover:text-white transition-colors flex items-center justify-center">
+                    Vazgeç
+                </a>
+                <button type="submit" class="h-9 px-5 rounded-lg bg-primary text-on-primary font-medium text-xs hover:bg-primary-container transition-colors shadow-sm shadow-primary/20 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">person_add</span>
+                    <span>Kullanıcıyı Kaydet</span>
+                </button>
+            </div>
+        </form>
     </div>
-
-    <div class="form-group">
-        <label asp-for="DepartmentId" class="control-label">Departman</label>
-        <select asp-for="DepartmentId" asp-items="ViewBag.Departments" class="form-control">
-            <option value="">-- Seçiniz --</option>
-        </select>
-        <!-- Hata mesajını gösteren kısım -->
-        <span asp-validation-for="DepartmentId" class="text-danger"></span>
-    </div>
-
-    <div class="form-group mb-3">
-    <label asp-for="Role" class="control-label"></label>
-    <select asp-for="Role" asp-items="Html.GetEnumSelectList<IsoDof.Web.Models.Entities.Enums.UserRole>()" class="form-control"></select>
-    </div>  
-
-    <div class="form-group mb-3">
-        <label>Şifre</label>
-        <input type="password" name="password" class="form-control" />
-    </div>  
-
-    <div class="form-group mt-3">
-        <button type="submit" class="btn btn-primary">Kaydet</button>
-        <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>
-    </div>
-</form>
+</div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

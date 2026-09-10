@@ -1,51 +1,224 @@
 @model IEnumerable<IsoDof.Web.Models.Entities.AppUser>
 
 @{
-    ViewData["Title"] = "Kullanıcılar";
+    ViewData["Title"] = "Governance - Kullanıcılar ve Roller";
+    var userList = Model.ToList();
+    var totalUsers = userList.Count;
+    var qaLeads = userList.Count(u => u.Role == IsoDof.Web.Models.Entities.Enums.UserRole.KaliteKontrol);
+    var adminCount = userList.Count(u => u.Role == IsoDof.Web.Models.Entities.Enums.UserRole.Admin);
+    var standardCount = userList.Count(u => u.Role == IsoDof.Web.Models.Entities.Enums.UserRole.Kullanici);
+    var totalDepts = (int)(ViewBag.TotalDepartmentsCount ?? 0);
 }
 
-<h1>Kullanıcılar</h1>
+<div class="flex flex-col w-full space-y-8">
+    <!-- SIMPLIFIED HEADER -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono tracking-wide uppercase bg-secondary/10 text-secondary border border-secondary/20">Access Control</span>
+                <span class="text-xs text-outline font-mono">Sec. 5.3 RBAC</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-white tracking-tight">Governance</h1>
+            <p class="text-xs text-outline mt-0.5">Manage personnel credentials, access roles, and department assignments</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="relative w-64">
+                <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[16px]">search</span>
+                <input id="userSearchInput" 
+                       class="w-full h-9 pl-9 pr-3 text-xs bg-surface-container-low border border-white/[0.06] text-white placeholder:text-outline rounded-lg focus:outline-none focus:border-primary/40 transition-colors" 
+                       placeholder="Search users, email, or role..." 
+                       type="text"/>
+            </div>
+            <a asp-action="Create" 
+               class="h-9 px-4 flex items-center gap-1.5 rounded-lg bg-primary text-on-primary font-medium text-xs hover:bg-primary-container transition-colors shadow-sm shadow-primary/20 text-decoration-none">
+                <span class="material-symbols-outlined text-[16px]">person_add</span>
+                <span>New User</span>
+            </a>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Yeni Kullanıcı</a>
-</p>
+    <!-- MINIMALIST METRICS ROW -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 border border-white/[0.05] rounded-xl bg-surface-container-low/60 p-1">
+        <div class="p-5 flex flex-col justify-center">
+            <span class="text-xs text-outline font-medium">Total Personnel</span>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-3xl font-semibold text-white tracking-tight">@totalUsers</span>
+                <span class="text-xs text-secondary font-medium">@totalDepts departments</span>
+            </div>
+        </div>
+        <div class="p-5 flex flex-col justify-center md:border-l border-white/[0.04]">
+            <span class="text-xs text-outline font-medium">Quality Leads (QA)</span>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-3xl font-semibold text-white tracking-tight">@qaLeads</span>
+                <span class="text-xs text-primary font-medium">Domain evaluators</span>
+            </div>
+        </div>
+        <div class="p-5 flex flex-col justify-center md:border-l border-white/[0.04]">
+            <span class="text-xs text-outline font-medium">Administrators</span>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-3xl font-semibold text-white tracking-tight">@adminCount</span>
+                <span class="text-xs text-outline font-mono">System gatekeepers</span>
+            </div>
+        </div>
+    </section>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Ad Soyad</th>
-            <th>E-posta</th>
-            <th>Departman</th>
-            <th>Rol</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var user in Model)
-        {
-            <tr>
-                <td>@user.FullName</td>
-                <td>@user.Email</td>
-                <td>@(user.Department?.Name ?? "-")</td>
-                <td>
-                    @if (user.Role == IsoDof.Web.Models.Entities.Enums.UserRole.Admin)
+    <!-- CLEAN SEGMENTED TABS -->
+    <div class="flex items-center justify-between pt-1">
+        <div class="flex items-center p-1 bg-surface-container-low border border-white/[0.05] rounded-lg">
+            <a asp-controller="Departments" asp-action="Index" 
+               class="px-3.5 py-1.5 rounded-md text-outline hover:text-white text-xs font-medium transition-colors text-decoration-none flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">corporate_fare</span>
+                <span>Departments</span>
+            </a>
+            <a asp-controller="AppUsers" asp-action="Index" 
+               class="px-3.5 py-1.5 rounded-md bg-white/[0.06] text-white text-xs font-medium transition-colors shadow-sm text-decoration-none flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px] text-primary">group</span>
+                <span>Users &amp; Roles</span>
+            </a>
+        </div>
+        <div class="text-xs text-outline font-mono" id="entryCount">@totalUsers entries</div>
+    </div>
+
+    <!-- SLEEK MINIMAL DATA LIST -->
+    <section class="rounded-xl border border-white/[0.05] bg-surface-container-low/40 overflow-hidden">
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left" id="usersTable">
+                <thead>
+                    <tr class="border-b border-white/[0.04] text-[11px] font-medium text-outline uppercase tracking-wider">
+                        <th class="py-3.5 px-6 font-medium">Personnel</th>
+                        <th class="py-3.5 px-6 font-medium">Email Address</th>
+                        <th class="py-3.5 px-6 font-medium">Department</th>
+                        <th class="py-3.5 px-6 font-medium">System Role</th>
+                        <th class="py-3.5 px-6 font-medium text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/[0.03]" id="userTableBody">
+                    @if (!userList.Any())
                     {
-                        <span class="badge bg-danger">Admin</span>
-                    }
-                    else if (user.Role == IsoDof.Web.Models.Entities.Enums.UserRole.KaliteKontrol)
-                    {
-                        <span class="badge bg-primary">Kalite Kontrol</span>
+                        <tr>
+                            <td colspan="5" class="py-12 text-center text-outline">
+                                <span class="material-symbols-outlined text-4xl block mx-auto mb-2 opacity-40">group</span>
+                                <p class="text-sm">Henüz bir kullanıcı kaydı bulunamadı.</p>
+                                <a asp-action="Create" class="mt-3 inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+                                    <span class="material-symbols-outlined text-[14px]">person_add</span> Yeni Kullanıcı Ekle
+                                </a>
+                            </td>
+                        </tr>
                     }
                     else
                     {
-                        <span class="badge bg-secondary">Kullanıcı</span>
+                        @foreach (var user in userList)
+                        {
+                            var initial = !string.IsNullOrEmpty(user.FullName) ? user.FullName.Substring(0, 1).ToUpper() : "U";
+                            <tr class="hover:bg-white/[0.02] transition-colors group user-row">
+                                <td class="py-4 px-6">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-surface-container-highest border border-white/10 text-primary flex items-center justify-center font-bold text-xs">
+                                            @initial
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-white group-hover:text-primary transition-colors user-name">
+                                                @user.FullName
+                                            </div>
+                                            <div class="text-[11px] text-outline">ID: #@user.Id.ToString("D3")</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6 whitespace-nowrap">
+                                    <span class="font-mono text-xs text-on-surface-variant user-email">@user.Email</span>
+                                </td>
+                                <td class="py-4 px-6 whitespace-nowrap user-dept">
+                                    @if (user.Department != null)
+                                    {
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-secondary/80"></span>
+                                            <span class="text-xs text-on-surface">@user.Department.Name</span>
+                                            @if (!string.IsNullOrEmpty(user.Department.Code))
+                                            {
+                                                <span class="font-mono text-[10px] text-outline bg-white/[0.03] px-1.5 py-0.5 rounded">@user.Department.Code</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-xs text-outline italic">No Department</span>
+                                    }
+                                </td>
+                                <td class="py-4 px-6 whitespace-nowrap user-role">
+                                    @if (user.Role == IsoDof.Web.Models.Entities.Enums.UserRole.Admin)
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-error-container/20 text-error border border-error/30">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                                            <span>Admin</span>
+                                        </span>
+                                    }
+                                    else if (user.Role == IsoDof.Web.Models.Entities.Enums.UserRole.KaliteKontrol)
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                            <span>Kalite Kontrol</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/[0.04] text-on-surface-variant border border-white/[0.06]">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                                            <span>Kullanıcı</span>
+                                        </span>
+                                    }
+                                </td>
+                                <td class="py-4 px-6 whitespace-nowrap text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <a asp-action="Edit" asp-route-id="@user.Id" 
+                                           title="Düzenle" 
+                                           class="text-outline hover:text-white p-1.5 rounded-md hover:bg-white/[0.04] transition-colors inline-flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-[18px]">edit</span>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@user.Id" 
+                                           title="Sil" 
+                                           class="text-outline hover:text-error p-1.5 rounded-md hover:bg-error/10 transition-colors inline-flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
                     }
-                </td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
-                    <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-outline-danger">Sil</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                </tbody>
+            </table>
+        </div>
+        <!-- REFINED MINIMAL FOOTER -->
+        <div class="px-6 py-3 border-t border-white/[0.04] flex items-center justify-between text-xs text-outline">
+            <span id="footerCount">Showing @totalUsers entries</span>
+            <div class="flex items-center gap-1 font-mono text-[10px] text-outline/60">
+                <span>AEGIS Access Control v4.2</span>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('userSearchInput')?.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#userTableBody .user-row');
+            let visible = 0;
+            rows.forEach(row => {
+                const name = row.querySelector('.user-name')?.textContent.toLowerCase() || '';
+                const email = row.querySelector('.user-email')?.textContent.toLowerCase() || '';
+                const dept = row.querySelector('.user-dept')?.textContent.toLowerCase() || '';
+                const role = row.querySelector('.user-role')?.textContent.toLowerCase() || '';
+                if (name.includes(query) || email.includes(query) || dept.includes(query) || role.includes(query)) {
+                    row.style.display = '';
+                    visible++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            const entryCount = document.getElementById('entryCount');
+            const footerCount = document.getElementById('footerCount');
+            if (entryCount) entryCount.textContent = `${visible} entries`;
+            if (footerCount) footerCount.textContent = `Showing ${visible} of ${rows.length}`;
+        });
+    </script>
+}
