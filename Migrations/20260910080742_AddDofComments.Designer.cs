@@ -4,6 +4,7 @@ using IsoDof.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IsoDof.Web.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260910080742_AddDofComments")]
+    partial class AddDofComments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -75,12 +78,7 @@ namespace IsoDof.Web.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int?>("QualityResponsibleUserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("QualityResponsibleUserId");
 
                     b.ToTable("Departments");
                 });
@@ -176,40 +174,6 @@ namespace IsoDof.Web.Migrations
                     b.ToTable("DofActions");
                 });
 
-            modelBuilder.Entity("IsoDof.Web.Models.Entities.DofAttachment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("DofId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("StoredFileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UploadedByUserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DofId");
-
-                    b.HasIndex("UploadedByUserId");
-
-                    b.ToTable("DofAttachments");
-                });
-
             modelBuilder.Entity("IsoDof.Web.Models.Entities.DofComment", b =>
                 {
                     b.Property<int>("Id")
@@ -250,16 +214,6 @@ namespace IsoDof.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("Department");
-                });
-
-            modelBuilder.Entity("IsoDof.Web.Models.Entities.Department", b =>
-                {
-                    b.HasOne("IsoDof.Web.Models.Entities.AppUser", "QualityResponsibleUser")
-                        .WithMany()
-                        .HasForeignKey("QualityResponsibleUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("QualityResponsibleUser");
                 });
 
             modelBuilder.Entity("IsoDof.Web.Models.Entities.Dof", b =>
@@ -306,25 +260,6 @@ namespace IsoDof.Web.Migrations
                     b.Navigation("ResponsibleUser");
                 });
 
-            modelBuilder.Entity("IsoDof.Web.Models.Entities.DofAttachment", b =>
-                {
-                    b.HasOne("IsoDof.Web.Models.Entities.Dof", "Dof")
-                        .WithMany("Attachments")
-                        .HasForeignKey("DofId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IsoDof.Web.Models.Entities.AppUser", "UploadedByUser")
-                        .WithMany()
-                        .HasForeignKey("UploadedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Dof");
-
-                    b.Navigation("UploadedByUser");
-                });
-
             modelBuilder.Entity("IsoDof.Web.Models.Entities.DofComment", b =>
                 {
                     b.HasOne("IsoDof.Web.Models.Entities.AppUser", "AuthorUser")
@@ -361,8 +296,6 @@ namespace IsoDof.Web.Migrations
             modelBuilder.Entity("IsoDof.Web.Models.Entities.Dof", b =>
                 {
                     b.Navigation("Actions");
-
-                    b.Navigation("Attachments");
 
                     b.Navigation("Comments");
                 });

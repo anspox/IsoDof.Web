@@ -1,8 +1,98 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model IsoDof.Web.Models.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Ana Sayfa";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<h1>Genel Bakış</h1>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Toplam DÖF</h5>
+                <p class="card-text display-6">@Model.TotalCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Açık</h5>
+                <p class="card-text display-6">@Model.OpenCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">Süresi Geçmiş</h5>
+                <p class="card-text display-6">@Model.OverdueCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Kapatılmış</h5>
+                <p class="card-text display-6">@Model.ClosedCount</p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<h3>Departmana Göre Dağılım</h3>
+@if (!Model.ByDepartment.Any())
+{
+    <p>Henüz kayıt yok.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Departman</th>
+                <th>DÖF Sayısı</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var stat in Model.ByDepartment)
+            {
+                <tr>
+                    <td>@stat.DepartmentName</td>
+                    <td>@stat.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h3>Duruma Göre Dağılım</h3>
+@if (!Model.ByStatus.Any())
+{
+    <p>Henüz kayıt yok.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Durum</th>
+                <th>DÖF Sayısı</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var stat in Model.ByStatus)
+            {
+                <tr>
+                    <td>@stat.StatusName</td>
+                    <td>@stat.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<p>
+    <a asp-controller="Dofs" asp-action="Index" class="btn btn-outline-primary">Tüm DÖF Kayıtlarına Git</a>
+</p>

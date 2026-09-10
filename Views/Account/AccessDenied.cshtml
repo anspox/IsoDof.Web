@@ -1,0 +1,13 @@
+@{
+    ViewData["Title"] = "Erişim Reddedildi";
+}
+
+<div class="container text-center mt-5">
+    <div class="alert alert-danger p-5 shadow-sm rounded">
+        <h1 class="display-4 text-danger"><i class="bi bi-shield-lock-fill"></i> Erişim Reddedildi</h1>
+        <p class="lead mt-3">Bu sayfayı görüntülemek için <strong>Admin (Yönetici)</strong> yetkisine sahip olmanız gerekmektedir.</p>
+        <hr class="my-4">
+        <p>Lütfen bir yönetici ile iletişime geçin veya yetkili bir hesapla tekrar giriş yapın.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary mt-2">Ana Sayfaya Dön</a>
+    </div>
+</div>

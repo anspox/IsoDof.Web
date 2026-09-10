@@ -30,6 +30,16 @@
         <span asp-validation-for="DepartmentId" class="text-danger"></span>
     </div>
 
+    <div class="form-group mb-3">
+    <label asp-for="Role" class="control-label"></label>
+    <select asp-for="Role" asp-items="Html.GetEnumSelectList<IsoDof.Web.Models.Entities.Enums.UserRole>()" class="form-control"></select>
+    </div>  
+
+    <div class="form-group mb-3">
+        <label>Şifre</label>
+        <input type="password" name="password" class="form-control" />
+    </div>  
+
     <div class="form-group mt-3">
         <button type="submit" class="btn btn-primary">Kaydet</button>
         <a asp-action="Index" class="btn btn-secondary">Vazgeç</a>

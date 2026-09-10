@@ -4,6 +4,7 @@ using IsoDof.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IsoDof.Web.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260910081853_AddDofAttachments")]
+    partial class AddDofAttachments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -75,12 +78,7 @@ namespace IsoDof.Web.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int?>("QualityResponsibleUserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("QualityResponsibleUserId");
 
                     b.ToTable("Departments");
                 });
@@ -250,16 +248,6 @@ namespace IsoDof.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("Department");
-                });
-
-            modelBuilder.Entity("IsoDof.Web.Models.Entities.Department", b =>
-                {
-                    b.HasOne("IsoDof.Web.Models.Entities.AppUser", "QualityResponsibleUser")
-                        .WithMany()
-                        .HasForeignKey("QualityResponsibleUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("QualityResponsibleUser");
                 });
 
             modelBuilder.Entity("IsoDof.Web.Models.Entities.Dof", b =>

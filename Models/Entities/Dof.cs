@@ -47,7 +47,8 @@ public class Dof
     public DateTime? ClosedAt { get; set; }
 
     public ICollection<DofAction> Actions { get; set; } = new List<DofAction>();
-
+    public ICollection<DofComment> Comments { get; set; } = new List<DofComment>();
+    public ICollection<DofAttachment> Attachments { get; set; } = new List<DofAttachment>();    
     public bool IsOverdue => DueDate.HasValue && DateTime.UtcNow > DueDate.Value && Status != DofStatus.Kapatildi && Status != DofStatus.Reddedildi;
 
 }

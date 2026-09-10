@@ -15,6 +15,7 @@
         <tr>
             <th>Ad</th>
             <th>Kod</th>
+            <th>Kalite Kontrol Sorumlusu</th>
             <th></th>
         </tr>
     </thead>
@@ -24,6 +25,7 @@
             <tr>
                 <td>@dept.Name</td>
                 <td>@dept.Code</td>
+                <td>@(dept.QualityResponsibleUser?.FullName ?? "-")</td>
                 <td>
                     <a asp-action="Edit" asp-route-id="@dept.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
                     <a asp-action="Delete" asp-route-id="@dept.Id" class="btn btn-sm btn-outline-danger">Sil</a>

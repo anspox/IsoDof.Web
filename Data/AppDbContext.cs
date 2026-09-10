@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<Dof> Dofs => Set<Dof>();
     public DbSet<DofAction> DofActions => Set<DofAction>();
+    public DbSet<DofComment> DofComments { get; set; }
+    public DbSet<DofAttachment> DofAttachments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -20,6 +22,12 @@ public class AppDbContext : DbContext
             .HasOne(u => u.Department)
             .WithMany()
             .HasForeignKey(u => u.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Department>()
+            .HasOne(d => d.QualityResponsibleUser)
+            .WithMany()
+            .HasForeignKey(d => d.QualityResponsibleUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Dof>()
@@ -39,5 +47,23 @@ public class AppDbContext : DbContext
             .WithMany(u => u.AssignedDofs)
             .HasForeignKey(d => d.AssignedToUserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DofComment>()
+            .HasOne(c => c.Dof)
+            .WithMany(d => d.Comments)
+            .HasForeignKey(c => c.DofId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DofComment>()
+            .HasOne(c => c.AuthorUser)
+            .WithMany(u => u.Comments)
+            .HasForeignKey(c => c.AuthorUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        modelBuilder.Entity<DofAttachment>()
+            .HasOne(a => a.UploadedByUser)
+            .WithMany()
+            .HasForeignKey(a => a.UploadedByUserId)
+            .OnDelete(DeleteBehavior.Restrict); 
     }
 }

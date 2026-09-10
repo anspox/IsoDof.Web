@@ -12,5 +12,9 @@ public class Department
     [MaxLength(20)]
     public string? Code { get; set; }
 
+    [Display(Name = "Kalite Kontrol Sorumlusu")]
+    public int? QualityResponsibleUserId { get; set; }
+    public AppUser? QualityResponsibleUser { get; set; }
+
     public ICollection<Dof> Dofs { get; set; } = new List<Dof>();
 }

@@ -16,6 +16,7 @@
             <th>Ad Soyad</th>
             <th>E-posta</th>
             <th>Departman</th>
+            <th>Rol</th>
             <th></th>
         </tr>
     </thead>
@@ -26,6 +27,7 @@
                 <td>@user.FullName</td>
                 <td>@user.Email</td>
                 <td>@(user.Department?.Name ?? "-")</td>
+                <td>@user.Role</td>
                 <td>
                     <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary">Düzenle</a>
                     <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-outline-danger">Sil</a>

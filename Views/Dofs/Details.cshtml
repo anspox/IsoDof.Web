@@ -55,4 +55,66 @@ else
     </ul>
 }
 
+<h3 class="mt-4">Dosya Ekleri</h3>
+
+@if (TempData["UploadError"] != null)
+{
+    <div class="alert alert-danger">@TempData["UploadError"]</div>
+}
+
+@if (!Model.Attachments.Any())
+{
+    <p>Henüz dosya eklenmemiş.</p>
+}
+else
+{
+    <ul class="list-group mb-3">
+        @foreach (var attachment in Model.Attachments)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="~/uploads/dof-attachments/@attachment.StoredFileName" target="_blank">@attachment.FileName</a>
+                <small class="text-muted">@(attachment.UploadedByUser?.FullName ?? "-") — @attachment.UploadedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</small>
+            </li>
+        }
+    </ul>
+}
+
+<form asp-action="UploadAttachment" asp-controller="Dofs" method="post" enctype="multipart/form-data" class="mb-3">
+    <input type="hidden" name="dofId" value="@Model.Id" />
+    <div class="form-group">
+        <input type="file" name="file" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Dosya Yükle</button>
+</form>
+
+<h3 class="mt-4">Yorumlar</h3>
+
+@if (!Model.Comments.Any())
+{
+    <p>Henüz yorum yok.</p>
+}
+else
+{
+    <ul class="list-group mb-3">
+        @foreach (var comment in Model.Comments)
+        {
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <strong>@(comment.AuthorUser?.FullName ?? "-")</strong>
+                    <small class="text-muted">@comment.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</small>
+                </div>
+                <div>@comment.Text</div>
+            </li>
+        }
+    </ul>
+}
+
+<form asp-action="AddComment" asp-controller="Dofs" method="post" class="mb-3">
+    <input type="hidden" name="dofId" value="@Model.Id" />
+    <div class="form-group">
+        <textarea name="text" class="form-control" rows="2" placeholder="Bir yorum yaz..." required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Yorum Ekle</button>
+</form>
+
 <a asp-action="Index" class="btn btn-secondary mt-3">Listeye Dön</a>

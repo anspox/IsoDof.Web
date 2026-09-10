@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using IsoDof.Web.Models.Entities.Enums;
 
 namespace IsoDof.Web.Models.Entities;
 
@@ -30,4 +31,11 @@ public class AppUser
 
     [InverseProperty(nameof(Dof.AssignedToUser))]
     public ICollection<Dof> AssignedDofs { get; set; } = new List<Dof>();
+
+    public string PasswordHash { get; set; } = string.Empty;
+
+    [Display(Name = "Rol")]
+    public UserRole Role { get; set; } = UserRole.Kullanici;    
+
+    public ICollection<DofComment> Comments { get; set; } = new List<DofComment>();
 }

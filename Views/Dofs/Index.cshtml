@@ -10,6 +10,31 @@
     <a asp-action="Create" class="btn btn-primary">Yeni DÖF</a>
 </p>
 
+<form asp-action="Index" method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="departmentId" asp-items="ViewBag.Departments" class="form-control">
+            <option value="">Tüm Departmanlar</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="status" asp-items="ViewBag.StatusList" class="form-control">
+            <option value="">Tüm Durumlar</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="sortOrder" class="form-control">
+            <option value="">En Yeni</option>
+            <option value="oldest" selected="@(ViewBag.SortOrder == "oldest")">En Eski</option>
+            <option value="duedate_asc" selected="@(ViewBag.SortOrder == "duedate_asc")">Bitiş Tarihi (Yakın → Uzak)</option>
+            <option value="duedate_desc" selected="@(ViewBag.SortOrder == "duedate_desc")">Bitiş Tarihi (Uzak → Yakın)</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-secondary">Filtrele</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Temizle</a>
+    </div>
+</form>
+
 <table class="table">
     <thead>
         <tr>
