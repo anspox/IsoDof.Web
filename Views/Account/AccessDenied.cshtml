@@ -2,12 +2,34 @@
     ViewData["Title"] = "Erişim Reddedildi";
 }
 
-<div class="container text-center mt-5">
-    <div class="alert alert-danger p-5 shadow-sm rounded">
-        <h1 class="display-4 text-danger"><i class="bi bi-shield-lock-fill"></i> Erişim Reddedildi</h1>
-        <p class="lead mt-3">Bu sayfayı görüntülemek için <strong>Admin (Yönetici)</strong> yetkisine sahip olmanız gerekmektedir.</p>
-        <hr class="my-4">
-        <p>Lütfen bir yönetici ile iletişime geçin veya yetkili bir hesapla tekrar giriş yapın.</p>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-primary mt-2">Ana Sayfaya Dön</a>
+<div class="max-w-md mx-auto my-12 p-8 bg-surface-container-low border border-white/[0.06] rounded-2xl text-center space-y-6 shadow-2xl">
+    <div class="w-16 h-16 rounded-2xl bg-error-container/20 border border-error/30 text-error mx-auto flex items-center justify-center">
+        <span class="material-symbols-outlined text-3xl">shield_lock</span>
+    </div>
+
+    <div class="space-y-2">
+        <span class="px-2.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wide bg-error-container/20 text-error border border-error/30">
+            HTTP 403 Forbidden
+        </span>
+        <h1 class="text-2xl font-semibold text-white tracking-tight">Erişim Reddedildi</h1>
+        <p class="text-xs text-outline leading-relaxed">
+            Bu modülü veya işlemi görüntülemek için gereken yetkiye sahip değilsiniz. Yalnızca <strong>Yönetici (Admin)</strong> veya yetkili roller erişebilir.
+        </p>
+    </div>
+
+    <div class="p-3.5 bg-surface-container rounded-xl border border-white/[0.04] text-[11px] text-outline text-left space-y-1">
+        <div class="flex items-center gap-2 text-on-surface">
+            <span class="material-symbols-outlined text-[15px] text-primary">verified_user</span>
+            <span class="font-medium">21 CFR Part 11 Güvenlik İlkesi</span>
+        </div>
+        <p class="text-outline/70">Erişim hakları ve rol kısıtlamaları denetim izine loglanmaktadır.</p>
+    </div>
+
+    <div class="pt-2">
+        <a asp-controller="Home" asp-action="Index" 
+           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-on-primary font-medium text-xs hover:bg-primary-container transition-colors shadow-sm shadow-primary/20 text-decoration-none">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Ana Sayfaya Dön</span>
+        </a>
     </div>
 </div>
