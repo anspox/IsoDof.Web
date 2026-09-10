@@ -167,7 +167,7 @@ public class DofsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Dof dof)
+    public async Task<IActionResult> Create(Dof dof, IFormFile? file)
     {
         if (User.IsInRole("Admin") || User.IsInRole("KaliteKontrol"))
         {
@@ -218,6 +218,33 @@ public class DofsController : Controller
                 Note = "Kayıt oluşturuldu"
             });
             await _context.SaveChangesAsync();
+
+            // Varsa dosya ekini kaydet
+            if (file != null && file.Length > 0)
+            {
+                var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".docx", ".xlsx" };
+                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (allowedExtensions.Contains(extension) && file.Length <= 10 * 1024 * 1024)
+                {
+                    var uploadsFolder = Path.Combine("wwwroot", "uploads", "dof-attachments");
+                    Directory.CreateDirectory(uploadsFolder);
+                    var storedFileName = $"{Guid.NewGuid()}{extension}";
+                    var filePath = Path.Combine(uploadsFolder, storedFileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    _context.DofAttachments.Add(new DofAttachment
+                    {
+                        DofId = dof.Id,
+                        FileName = file.FileName,
+                        StoredFileName = storedFileName,
+                        UploadedByUserId = CurrentUserId
+                    });
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             if (dof.AssignedToUserId is int notifyId)
             {
