@@ -1,0 +1,135 @@
+@model IsoDof.Web.Models.UserImportResultViewModel
+
+@{
+    ViewData["Title"] = "Toplu Kullanıcı İçe Aktarma";
+}
+
+<div class="max-w-3xl mx-auto w-full space-y-6">
+    <!-- Başlık -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="text-xs text-outline flex items-center gap-2 mb-1">
+                <a asp-action="Index" class="hover:text-white transition-colors">Yönetim</a>
+                <span class="text-white/20">/</span>
+                <a asp-action="Index" class="hover:text-white transition-colors">Kullanıcılar</a>
+                <span class="text-white/20">/</span>
+                <span class="text-on-surface font-medium">Toplu İçe Aktarma</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-white tracking-tight">Toplu Kullanıcı İçe Aktarma</h1>
+            <p class="text-xs text-outline mt-0.5">Excel (.xlsx) veya CSV dosyasıyla tek seferde yüzlerce kullanıcı ekleyin.</p>
+        </div>
+        <a asp-action="Index" class="text-xs text-outline hover:text-white transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Geri Dön</span>
+        </a>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="text-xs text-error p-3 rounded-lg bg-error-container/10 border border-error/20">
+            <div asp-validation-summary="All"></div>
+        </div>
+    }
+
+    <!-- Sonuç Özeti -->
+    @if (Model.HasRun)
+    {
+        <div class="bg-surface-container-low border border-white/[0.05] rounded-2xl p-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-semibold text-tertiary">@Model.AddedCount</span>
+                    <span class="text-xs text-outline">eklendi</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-semibold @(Model.SkippedCount > 0 ? "text-error" : "text-white")">@Model.SkippedCount</span>
+                    <span class="text-xs text-outline">atlandı</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-semibold text-white">@Model.TotalRows</span>
+                    <span class="text-xs text-outline">toplam satır</span>
+                </div>
+            </div>
+
+            @if (Model.AddedCount > 0)
+            {
+                <div class="text-xs text-on-surface-variant p-3 rounded-lg bg-surface-container border border-white/[0.06]">
+                    Şifresi belirtilmeyen kullanıcılar için varsayılan giriş şifresi:
+                    <strong class="font-mono text-primary">@Model.DefaultPassword</strong>
+                    — kullanıcıların ilk girişte değiştirmesi önerilir.
+                </div>
+            }
+
+            @{
+                var skipped = Model.Results.Where(r => !r.Success).ToList();
+            }
+            @if (skipped.Any())
+            {
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-white/[0.06] text-outline uppercase tracking-wider">
+                                <th class="py-2 pr-4">Satır</th>
+                                <th class="py-2 pr-4">Ad Soyad</th>
+                                <th class="py-2 pr-4">E-posta</th>
+                                <th class="py-2">Neden Atlandı</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/[0.04]">
+                            @foreach (var r in skipped)
+                            {
+                                <tr>
+                                    <td class="py-2 pr-4 font-mono text-outline">@r.RowNumber</td>
+                                    <td class="py-2 pr-4 text-on-surface">@r.FullName</td>
+                                    <td class="py-2 pr-4 font-mono text-on-surface-variant">@r.Email</td>
+                                    <td class="py-2 text-error">@r.Error</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <div class="pt-2 flex items-center gap-3 border-t border-white/[0.04]">
+                <a asp-action="Index" class="h-9 px-4 rounded-lg bg-primary text-on-primary font-medium text-xs hover:bg-primary-container transition-colors flex items-center justify-center">
+                    Kullanıcı Listesine Git
+                </a>
+                <a asp-action="Import" class="h-9 px-4 rounded-lg text-xs font-medium text-outline hover:text-white transition-colors flex items-center justify-center">
+                    Yeni Dosya Yükle
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Yükleme Formu -->
+        <div class="bg-surface-container-low border border-white/[0.05] rounded-2xl p-6 sm:p-8 space-y-5">
+            <form asp-action="Import" method="post" enctype="multipart/form-data" class="space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-medium text-outline uppercase tracking-wider block">Dosya (.xlsx veya .csv)</label>
+                    <input type="file" name="file" accept=".xlsx,.csv,.xlsm" required
+                           class="w-full text-xs text-outline file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-surface-container-high file:text-primary hover:file:bg-primary hover:file:text-surface transition-colors cursor-pointer" />
+                </div>
+                <button type="submit" class="h-9 px-5 rounded-lg bg-primary text-on-primary font-medium text-xs hover:bg-primary-container transition-colors shadow-sm shadow-primary/20 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">upload_file</span>
+                    <span>Yükle ve İçe Aktar</span>
+                </button>
+            </form>
+
+            <div class="pt-4 border-t border-white/[0.04] space-y-2 text-xs text-on-surface-variant">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[16px] text-primary">download</span>
+                    <a asp-action="ImportTemplate" class="text-primary hover:underline">Örnek şablonu indir (CSV)</a>
+                </div>
+                <p><strong class="text-on-surface">Sütunlar:</strong> Ad Soyad, E-posta, Departman, Rol, Sicil No, Şifre</p>
+                <ul class="list-disc list-inside space-y-1 text-outline">
+                    <li><strong>Ad Soyad</strong> ve <strong>E-posta</strong> zorunludur; e-posta sistemde benzersiz olmalıdır.</li>
+                    <li><strong>Departman</strong> zorunludur; departman adı veya kodu yazılabilir (mevcut olmalı).</li>
+                    <li><strong>Rol</strong> boş bırakılırsa "Kullanıcı" atanır. ("Kullanıcı", "Kalite Kontrol", "Admin")</li>
+                    <li><strong>Sicil No</strong> isteğe bağlıdır; verilirse benzersiz olmalıdır.</li>
+                    <li><strong>Şifre</strong> boşsa varsayılan şifre <strong class="font-mono text-primary">@IsoDof.Web.Controllers.AppUsersController.DefaultBulkPassword</strong> atanır.</li>
+                    <li>Hatalı satırlar atlanır, geçerli satırlar eklenir; sonuçta atlanan satırların listesi gösterilir.</li>
+                </ul>
+            </div>
+        </div>
+    }
+</div>

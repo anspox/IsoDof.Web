@@ -29,6 +29,11 @@
                        placeholder="Kullanıcı, e-posta veya rol ara..."
                        type="text"/>
             </div>
+            <a asp-action="Import"
+               class="h-9 px-4 flex items-center gap-1.5 rounded-lg bg-surface-container border border-white/[0.08] text-on-surface font-medium text-xs hover:bg-surface-container-high transition-colors text-decoration-none">
+                <span class="material-symbols-outlined text-[16px]">upload_file</span>
+                <span>Toplu İçe Aktar</span>
+            </a>
             <a asp-action="Create"
                class="h-9 px-4 flex items-center gap-1.5 rounded-lg bg-primary text-on-primary font-medium text-xs hover:bg-primary-container transition-colors shadow-sm shadow-primary/20 text-decoration-none">
                 <span class="material-symbols-outlined text-[16px]">person_add</span>
@@ -86,6 +91,7 @@
                 <thead>
                     <tr class="border-b border-white/[0.04] text-[11px] font-medium text-outline uppercase tracking-wider">
                         <th class="py-3.5 px-6 font-medium">Personel</th>
+                        <th class="py-3.5 px-6 font-medium">Sicil No</th>
                         <th class="py-3.5 px-6 font-medium">E-posta Adresi</th>
                         <th class="py-3.5 px-6 font-medium">Departman</th>
                         <th class="py-3.5 px-6 font-medium">Sistem Rolü</th>
@@ -96,7 +102,7 @@
                     @if (!userList.Any())
                     {
                         <tr>
-                            <td colspan="5" class="py-12 text-center text-outline">
+                            <td colspan="6" class="py-12 text-center text-outline">
                                 <span class="material-symbols-outlined text-4xl block mx-auto mb-2 opacity-40">group</span>
                                 <p class="text-sm">Henüz bir kullanıcı kaydı bulunamadı.</p>
                                 <a asp-action="Create" class="mt-3 inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
@@ -123,6 +129,11 @@
                                             <div class="text-[11px] text-outline">ID: #@user.Id.ToString("D3")</div>
                                         </div>
                                     </div>
+                                </td>
+                                <td class="py-4 px-6 whitespace-nowrap user-sicil">
+                                    <span class="font-mono text-xs @(string.IsNullOrEmpty(user.SicilNo) ? "text-outline/50" : "text-on-surface-variant")">
+                                        @(string.IsNullOrEmpty(user.SicilNo) ? "—" : user.SicilNo)
+                                    </span>
                                 </td>
                                 <td class="py-4 px-6 whitespace-nowrap">
                                     <span class="font-mono text-xs text-on-surface-variant user-email">@user.Email</span>
@@ -208,7 +219,8 @@
                 const email = row.querySelector('.user-email')?.textContent.toLowerCase() || '';
                 const dept = row.querySelector('.user-dept')?.textContent.toLowerCase() || '';
                 const role = row.querySelector('.user-role')?.textContent.toLowerCase() || '';
-                if (name.includes(query) || email.includes(query) || dept.includes(query) || role.includes(query)) {
+                const sicil = row.querySelector('.user-sicil')?.textContent.toLowerCase() || '';
+                if (name.includes(query) || email.includes(query) || dept.includes(query) || role.includes(query) || sicil.includes(query)) {
                     row.style.display = '';
                     visible++;
                 } else {

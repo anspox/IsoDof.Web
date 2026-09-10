@@ -13,6 +13,10 @@ public class AppUser
     [MaxLength(100, ErrorMessage = "Ad Soyad en fazla 100 karakter olabilir.")]
     public string FullName { get; set; } = string.Empty;
 
+    [Display(Name = "Sicil No")]
+    [MaxLength(30, ErrorMessage = "Sicil No en fazla 30 karakter olabilir.")]
+    public string? SicilNo { get; set; }
+
     [Display(Name = "E-posta")]
     [Required(ErrorMessage = "E-posta alanı zorunludur.")]
     [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi giriniz.")]

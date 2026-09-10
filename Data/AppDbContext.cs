@@ -26,6 +26,11 @@ public class AppDbContext : DbContext
             .HasForeignKey(u => u.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<AppUser>()
+            .HasIndex(u => u.SicilNo)
+            .IsUnique()
+            .HasFilter("[SicilNo] IS NOT NULL");
+
         modelBuilder.Entity<Department>()
             .HasOne(d => d.QualityResponsibleUser)
             .WithMany()

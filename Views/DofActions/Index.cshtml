@@ -28,6 +28,14 @@
         </div>
     </div>
 
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="p-3 rounded-lg bg-error/10 text-error border border-error/30 flex items-center gap-2 text-xs font-medium">
+            <span class="material-symbols-outlined text-[18px]">warning</span>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
     <!-- Airy KPI Stat Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Card 1: Total Actions -->
@@ -259,10 +267,14 @@
             @Html.AntiForgeryToken()
             <div>
                 <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Bağlı DÖF Kaydı <span class="text-primary">*</span></label>
-                <select name="DofId" asp-items="ViewBag.Dofs" required
+                <select name="DofId" id="modalDofSelect" asp-items="ViewBag.Dofs" required
                         class="w-full bg-surface-container-lowest border border-white/[0.08] rounded-lg p-2.5 text-sm text-white focus:ring-1 focus:ring-primary focus:outline-none">
                     <option value="">-- DÖF Seçiniz --</option>
                 </select>
+                @if (!User.IsInRole("Admin") && !User.IsInRole("KaliteKontrol"))
+                {
+                    <p class="text-[11px] text-slate-500 mt-1.5">Yalnızca kendi açtığınız DÖF kayıtları listelenir.</p>
+                }
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Faaliyet / Görev Tanımı <span class="text-primary">*</span></label>
@@ -272,9 +284,9 @@
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Sorumlu Kişi</label>
-                    <select name="ResponsibleUserId" asp-items="ViewBag.Users"
-                            class="w-full bg-surface-container-lowest border border-white/[0.08] rounded-lg p-2.5 text-sm text-white focus:ring-1 focus:ring-primary focus:outline-none">
-                        <option value="">-- Sorumlu Seçiniz --</option>
+                    <select name="ResponsibleUserId" id="modalResponsibleSelect" disabled
+                            class="w-full bg-surface-container-lowest border border-white/[0.08] rounded-lg p-2.5 text-sm text-white focus:ring-1 focus:ring-primary focus:outline-none disabled:opacity-50">
+                        <option value="">-- Önce DÖF seçiniz --</option>
                     </select>
                 </div>
                 <div>
@@ -352,5 +364,42 @@
         function closeCapaDrawer() {
             document.getElementById('capaDrawer').classList.add('hidden');
         }
+
+        // DÖF seçilince sorumlu kişi listesini o DÖF'ün departmanıyla sınırla
+        (function () {
+            const dofSel = document.getElementById('modalDofSelect');
+            const respSel = document.getElementById('modalResponsibleSelect');
+            if (!dofSel || !respSel) return;
+
+            const deptUsersUrl = '@Url.Action("DepartmentUsers", "DofActions")';
+
+            dofSel.addEventListener('change', function () {
+                const id = dofSel.value;
+                respSel.innerHTML = '<option value="">-- Sorumlu Seçiniz --</option>';
+                respSel.disabled = true;
+                if (!id) {
+                    respSel.querySelector('option').textContent = '-- Önce DÖF seçiniz --';
+                    return;
+                }
+                fetch(deptUsersUrl + '?dofId=' + encodeURIComponent(id))
+                    .then(function (r) { return r.ok ? r.json() : []; })
+                    .then(function (list) {
+                        if (!list.length) {
+                            respSel.querySelector('option').textContent = '-- Departmanda kullanıcı yok --';
+                            return;
+                        }
+                        list.forEach(function (u) {
+                            const o = document.createElement('option');
+                            o.value = u.id;
+                            o.textContent = u.fullName;
+                            respSel.appendChild(o);
+                        });
+                        respSel.disabled = false;
+                    })
+                    .catch(function () {
+                        respSel.querySelector('option').textContent = '-- Liste yüklenemedi --';
+                    });
+            });
+        })();
     </script>
 }

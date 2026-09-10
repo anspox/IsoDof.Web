@@ -48,6 +48,15 @@
                 </div>
             </div>
 
+            <div class="space-y-1.5">
+                <label asp-for="SicilNo" class="text-xs font-medium text-outline uppercase tracking-wider block">Sicil No</label>
+                <input asp-for="SicilNo"
+                       placeholder="Örn: 10245"
+                       class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] font-mono text-white placeholder:text-outline/50 rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors" />
+                <span asp-validation-for="SicilNo" class="text-[11px] text-error"></span>
+                <p class="text-[11px] text-outline/70">İsteğe bağlı. Girilirse benzersiz olmalıdır.</p>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
                     <label asp-for="DepartmentId" class="text-xs font-medium text-outline uppercase tracking-wider block">Bağlı Departman</label>
