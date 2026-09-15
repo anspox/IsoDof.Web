@@ -106,123 +106,128 @@
             ("open", "Açık / Devam Edenler", "hourglass_top"),
             ("recent7", "Son 7 Gün", "history"),
         };
-    }
-    <!-- QUICK FILTER CHIPS -->
-    <div class="flex flex-wrap items-center gap-space-xs">
-        @foreach (var qf in quickFilters)
-        {
-            var isActive = quickFilter == qf.Key;
-            <a asp-action="Index"
-               asp-route-quickFilter="@qf.Key"
-               asp-route-departmentId="@ViewBag.DepartmentId"
-               asp-route-status="@ViewBag.Status"
-               asp-route-sortOrder="@ViewBag.SortOrder"
-               asp-route-search="@ViewBag.Search"
-               asp-route-showArchived="@(showArchived ? "true" : null)"
-               class="inline-flex items-center gap-space-2xs px-space-sm py-space-2xs rounded-full font-label-sm text-label-sm font-semibold border transition-colors
-                      @(isActive ? "bg-primary text-on-primary border-primary" : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant border-outline-variant/30")">
-                <span class="material-symbols-outlined text-[0.9rem]">@qf.Icon</span>
-                <span>@qf.Label</span>
-            </a>
-        }
-    </div>
-
-    @{
-        var activeFilterCount = (ViewBag.DepartmentId != null ? 1 : 0) +
-                                (ViewBag.Status != null ? 1 : 0) +
-                                (!string.IsNullOrEmpty(ViewBag.SortOrder as string) ? 1 : 0);
-        var hasActiveFilters = activeFilterCount > 0;
+        var deptName = ViewBag.IsKaliteKontrol != true && ViewBag.DepartmentId != null
+            ? ((Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.Departments).FirstOrDefault(i => i.Value == ViewBag.DepartmentId.ToString())?.Text
+            : null;
+        var statusName = ViewBag.Status != null ? ViewBag.Status.ToString() : null;
+        var searchText = ViewBag.Search as string;
+        var hasAnyActiveFilter = deptName != null || statusName != null || !string.IsNullOrEmpty(searchText);
     }
 
-    <!-- FILTERS TOOLBAR -->
-    <form id="dofFilterForm" asp-action="Index" method="get" class="bg-surface-container-low p-space-md rounded-xl shadow-md border border-outline-variant/20 flex flex-col gap-space-sm">
-        <input type="hidden" name="showArchived" value="@(showArchived ? "true" : "false")" />
-        <input type="hidden" name="quickFilter" value="@quickFilter" />
-
-        <!-- Main Search & Filter Toggle Bar -->
-        <div class="flex flex-wrap items-center gap-space-sm w-full">
-            <div class="relative inline-flex items-center flex-1 min-w-[240px]">
-                <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1rem]">search</span>
-                <input type="text" name="search" value="@ViewBag.Search" placeholder="DÖF no, başlık veya açıklamada ara..."
-                       class="w-full bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-3 py-space-xs rounded-lg border border-outline-variant/30 focus:outline-none focus:border-primary" />
-            </div>
-
-            <!-- Toggle Filter Panel Button (type="button" ensures page does NOT refresh) -->
-            <button type="button" id="toggleFilterBtn" onclick="toggleDofFilters(event)"
-                    class="inline-flex items-center gap-space-2xs px-space-md py-space-xs rounded-lg font-label-sm text-label-sm font-semibold transition-all border cursor-pointer
-                           @(hasActiveFilters ? "bg-primary/15 text-primary border-primary/40 shadow-[0_0_10px_rgba(137,206,255,0.15)]" : "bg-surface-container hover:bg-surface-container-high text-on-surface border-outline-variant/30")"
-                    title="Filtreleme seçeneklerini aç / kapat">
-                <span class="material-symbols-outlined text-[1.1rem]">tune</span>
-                <span>Filtreler</span>
-                @if (hasActiveFilters)
-                {
-                    <span class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary text-slate-950 font-mono">
-                        @activeFilterCount
-                    </span>
-                }
-                <span id="filterChevron" class="material-symbols-outlined text-[1rem] transition-transform duration-200 @(hasActiveFilters ? "rotate-180" : "")">expand_more</span>
-            </button>
-
-            <!-- Search Submit Button -->
-            <button type="submit" class="inline-flex items-center gap-space-2xs bg-primary hover:bg-primary-container text-on-primary px-space-md py-space-xs rounded-lg font-label-sm text-label-sm font-semibold transition-colors shadow-sm cursor-pointer">
-                <span class="material-symbols-outlined text-[1rem]">search</span>
-                <span>Ara</span>
-            </button>
-
-            @if (!string.IsNullOrEmpty(ViewBag.Search as string) || hasActiveFilters || !string.IsNullOrEmpty(quickFilter))
+    <!-- FILTERS CARD -->
+    <div class="bg-surface-container-low rounded-xl shadow-md border border-outline-variant/20 p-space-md flex flex-col gap-space-sm">
+        <!-- QUICK FILTER SEGMENTED CONTROL -->
+        <div class="inline-flex flex-wrap items-center gap-space-2xs bg-surface-container p-space-2xs rounded-lg self-start">
+            @foreach (var qf in quickFilters)
             {
-                <a asp-action="Index" asp-route-showArchived="@(showArchived ? "true" : null)"
-                   class="inline-flex items-center gap-space-2xs bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface px-space-sm py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors"
-                   title="Filtreleri ve aramayı sıfırla">
-                    <span class="material-symbols-outlined text-[1rem]">restart_alt</span>
-                    <span>Sıfırla</span>
+                var isActive = quickFilter == qf.Key;
+                <a asp-action="Index"
+                   asp-route-quickFilter="@qf.Key"
+                   asp-route-departmentId="@ViewBag.DepartmentId"
+                   asp-route-status="@ViewBag.Status"
+                   asp-route-sortOrder="@ViewBag.SortOrder"
+                   asp-route-search="@ViewBag.Search"
+                   asp-route-showArchived="@(showArchived ? "true" : null)"
+                   class="inline-flex items-center gap-space-2xs px-space-sm py-space-2xs rounded-md font-label-sm text-label-sm font-semibold transition-all
+                          @(isActive ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high")">
+                    <span class="material-symbols-outlined text-[0.95rem]">@qf.Icon</span>
+                    <span>@qf.Label</span>
                 </a>
             }
         </div>
 
-        <!-- Collapsible Detailed Filters Panel -->
-        <div id="filterPanel" class="@(hasActiveFilters ? "" : "hidden") pt-space-sm border-t border-outline-variant/20 flex flex-wrap items-center gap-space-sm w-full">
+        <!-- MAIN TOOLBAR: search + dropdowns, all live-apply -->
+        <form id="dofFilterForm" asp-action="Index" method="get" class="flex flex-wrap items-center gap-space-sm w-full pt-space-2xs">
+            <input type="hidden" name="showArchived" value="@(showArchived ? "true" : "false")" />
+            <input type="hidden" name="quickFilter" value="@quickFilter" />
+
+            <div class="relative inline-flex items-center flex-1 min-w-[240px]">
+                <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1.05rem]">search</span>
+                <input type="text" name="search" id="dofSearchInput" value="@ViewBag.Search" data-initial="@ViewBag.Search"
+                       placeholder="DÖF no, başlık veya açıklamada ara..."
+                       class="w-full bg-surface-container text-on-surface font-label-sm text-label-sm pl-9 pr-3 py-space-xs rounded-lg border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" />
+                <button type="submit" title="Ara"
+                        class="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-md text-outline hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-[1.05rem]">arrow_forward</span>
+                </button>
+            </div>
+
             @if (ViewBag.IsKaliteKontrol != true)
             {
-                <div class="relative inline-flex items-center flex-1 min-w-[180px]">
+                <div class="relative inline-flex items-center min-w-[160px]">
                     <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1rem]">corporate_fare</span>
-                    <select name="departmentId" asp-items="ViewBag.Departments"
-                            class="w-full bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-8 py-space-xs rounded-lg border border-outline-variant/30 appearance-none focus:outline-none focus:border-primary">
+                    <select name="departmentId" asp-items="ViewBag.Departments" onchange="this.form.submit()"
+                            class="bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-8 py-space-xs rounded-lg border border-outline-variant/30 appearance-none focus:outline-none focus:border-primary transition-colors cursor-pointer hover:border-outline-variant/60">
                         <option value="">Tüm Departmanlar</option>
                     </select>
-                    <span class="material-symbols-outlined absolute right-space-xs text-outline pointer-events-none text-[1rem]">arrow_drop_down</span>
+                    <span class="material-symbols-outlined absolute right-space-xs text-outline pointer-events-none text-[1rem]">expand_more</span>
                 </div>
             }
 
-            <div class="relative inline-flex items-center flex-1 min-w-[160px]">
+            <div class="relative inline-flex items-center min-w-[150px]">
                 <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1rem]">flag</span>
-                <select name="status" asp-items="ViewBag.StatusList"
-                        class="w-full bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-8 py-space-xs rounded-lg border border-outline-variant/30 appearance-none focus:outline-none focus:border-primary">
+                <select name="status" asp-items="ViewBag.StatusList" onchange="this.form.submit()"
+                        class="bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-8 py-space-xs rounded-lg border border-outline-variant/30 appearance-none focus:outline-none focus:border-primary transition-colors cursor-pointer hover:border-outline-variant/60">
                     <option value="">Tüm Durumlar</option>
                 </select>
-                <span class="material-symbols-outlined absolute right-space-xs text-outline pointer-events-none text-[1rem]">arrow_drop_down</span>
+                <span class="material-symbols-outlined absolute right-space-xs text-outline pointer-events-none text-[1rem]">expand_more</span>
             </div>
 
-            <div class="relative inline-flex items-center flex-1 min-w-[200px]">
+            <div class="relative inline-flex items-center min-w-[150px]">
                 <span class="material-symbols-outlined absolute left-space-sm text-outline pointer-events-none text-[1rem]">sort</span>
-                <select name="sortOrder"
-                        class="w-full bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-8 py-space-xs rounded-lg border border-outline-variant/30 appearance-none focus:outline-none focus:border-primary">
-                    <option value="">Sıralama: En Yeni</option>
+                <select name="sortOrder" onchange="this.form.submit()"
+                        class="bg-surface-container text-on-surface font-label-sm text-label-sm pl-8 pr-8 py-space-xs rounded-lg border border-outline-variant/30 appearance-none focus:outline-none focus:border-primary transition-colors cursor-pointer hover:border-outline-variant/60">
+                    <option value="">En Yeni</option>
                     <option value="oldest" selected="@(ViewBag.SortOrder == "oldest")">En Eski</option>
-                    <option value="duedate_asc" selected="@(ViewBag.SortOrder == "duedate_asc")">Bitiş Tarihi (Yakın → Uzak)</option>
-                    <option value="duedate_desc" selected="@(ViewBag.SortOrder == "duedate_desc")">Bitiş Tarihi (Uzak → Yakın)</option>
+                    <option value="duedate_asc" selected="@(ViewBag.SortOrder == "duedate_asc")">Termin: Yakın → Uzak</option>
+                    <option value="duedate_desc" selected="@(ViewBag.SortOrder == "duedate_desc")">Termin: Uzak → Yakın</option>
                 </select>
-                <span class="material-symbols-outlined absolute right-space-xs text-outline pointer-events-none text-[1rem]">arrow_drop_down</span>
+                <span class="material-symbols-outlined absolute right-space-xs text-outline pointer-events-none text-[1rem]">expand_more</span>
             </div>
+        </form>
 
-            <div class="flex items-center gap-space-xs">
-                <button type="submit" class="inline-flex items-center gap-space-2xs bg-primary hover:bg-primary-container text-on-primary px-space-md py-space-xs rounded-lg font-label-sm text-label-sm font-semibold transition-colors cursor-pointer">
-                    <span class="material-symbols-outlined text-[1rem]">filter_alt</span>
-                    <span>Uygula</span>
-                </button>
+        @if (hasAnyActiveFilter)
+        {
+            <!-- ACTIVE FILTER BADGES -->
+            <div class="flex flex-wrap items-center gap-space-2xs pt-space-2xs border-t border-outline-variant/10">
+                <span class="text-[11px] text-outline uppercase tracking-wider font-code-sm mr-1">Aktif:</span>
+
+                @if (!string.IsNullOrEmpty(searchText))
+                {
+                    <a asp-action="Index" asp-route-departmentId="@ViewBag.DepartmentId" asp-route-status="@ViewBag.Status"
+                       asp-route-sortOrder="@ViewBag.SortOrder" asp-route-quickFilter="@quickFilter" asp-route-showArchived="@(showArchived ? "true" : null)"
+                       class="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25 text-[11px] font-medium hover:bg-primary/20 transition-colors">
+                        <span>Arama: "@searchText"</span>
+                        <span class="material-symbols-outlined text-[0.85rem]">close</span>
+                    </a>
+                }
+                @if (deptName != null)
+                {
+                    <a asp-action="Index" asp-route-status="@ViewBag.Status" asp-route-sortOrder="@ViewBag.SortOrder"
+                       asp-route-search="@searchText" asp-route-quickFilter="@quickFilter" asp-route-showArchived="@(showArchived ? "true" : null)"
+                       class="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/25 text-[11px] font-medium hover:bg-secondary/20 transition-colors">
+                        <span>Departman: @deptName</span>
+                        <span class="material-symbols-outlined text-[0.85rem]">close</span>
+                    </a>
+                }
+                @if (statusName != null)
+                {
+                    <a asp-action="Index" asp-route-departmentId="@ViewBag.DepartmentId" asp-route-sortOrder="@ViewBag.SortOrder"
+                       asp-route-search="@searchText" asp-route-quickFilter="@quickFilter" asp-route-showArchived="@(showArchived ? "true" : null)"
+                       class="inline-flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full bg-tertiary/10 text-tertiary border border-tertiary/25 text-[11px] font-medium hover:bg-tertiary/20 transition-colors">
+                        <span>Durum: @statusName</span>
+                        <span class="material-symbols-outlined text-[0.85rem]">close</span>
+                    </a>
+                }
+
+                <a asp-action="Index" asp-route-showArchived="@(showArchived ? "true" : null)"
+                   class="inline-flex items-center gap-1 pl-2 pr-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant hover:text-error hover:bg-error/10 border border-outline-variant/20 text-[11px] font-medium transition-colors ml-auto">
+                    <span class="material-symbols-outlined text-[0.85rem]">restart_alt</span>
+                    <span>Tümünü Temizle</span>
+                </a>
             </div>
-        </div>
-    </form>
+        }
+    </div>
 
     <!-- DATA TABLE CARD -->
     <div class="bg-surface-container-low rounded-xl shadow-md border border-outline-variant/20 overflow-hidden">
@@ -414,23 +419,21 @@
 
 @section Scripts {
     <script>
-        function toggleDofFilters(e) {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            var filterPanel = document.getElementById('filterPanel');
-            var chevron = document.getElementById('filterChevron');
-            if (filterPanel) {
-                var isHidden = filterPanel.classList.toggle('hidden');
-                if (chevron) {
-                    if (isHidden) {
-                        chevron.classList.remove('rotate-180');
-                    } else {
-                        chevron.classList.add('rotate-180');
-                    }
+        (function () {
+            // Arama kutusu boşken veya değeri değişmemişken Enter/Ara'ya basılırsa
+            // gereksiz bir sayfa yenilemesi yapmayı engelle.
+            var form = document.getElementById('dofFilterForm');
+            var searchInput = document.getElementById('dofSearchInput');
+            if (!form || !searchInput) return;
+
+            form.addEventListener('submit', function (e) {
+                var current = searchInput.value.trim();
+                var initial = (searchInput.dataset.initial || '').trim();
+                if (current === initial) {
+                    e.preventDefault();
                 }
-            }
-        }
+            });
+        })();
     </script>
 }
+
