@@ -1,0 +1,85 @@
+@model IEnumerable<IsoDof.Web.Models.Entities.DofTemplate>
+
+@{
+    ViewData["Title"] = "DÖF Şablonları";
+}
+
+<div class="max-w-6xl mx-auto flex flex-col gap-6 text-on-surface">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight text-white">DÖF Şablonları</h1>
+            <p class="text-sm text-slate-400 mt-1">Sık karşılaşılan konular için hazır şablonlar. Çalışanlar yeni DÖF açarken bu şablonlardan birini seçip formu tek tıkla doldurabilir.</p>
+        </div>
+        <a asp-action="Create" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-fixed-dim text-slate-950 text-sm font-semibold rounded-lg shadow-sm transition-all cursor-pointer">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            <span>Yeni Şablon</span>
+        </a>
+    </div>
+
+    <div class="bg-surface-container border border-white/[0.06] rounded-xl overflow-hidden flex flex-col shadow-sm">
+        <div class="overflow-x-auto w-full">
+            @if (!Model.Any())
+            {
+                <div class="py-16 text-center text-xs text-slate-400">
+                    <span class="material-symbols-outlined text-3xl text-slate-500 block mb-2">description</span>
+                    Henüz tanımlanmış bir şablon bulunmamaktadır.
+                </div>
+            }
+            else
+            {
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/[0.06] text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            <th class="py-3 px-5">Şablon Adı</th>
+                            <th class="py-3 px-4">Tür</th>
+                            <th class="py-3 px-4">Kaynak</th>
+                            <th class="py-3 px-4">Departman</th>
+                            <th class="py-3 px-4">Durum</th>
+                            <th class="py-3 px-5 text-right">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/[0.04] text-sm text-slate-200">
+                        @foreach (var t in Model)
+                        {
+                            <tr class="hover:bg-white/[0.02] transition-colors">
+                                <td class="py-4 px-5">
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="font-medium text-white">@t.Name</span>
+                                        <span class="text-xs text-slate-400 line-clamp-1">@t.TitleTemplate</span>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4 text-xs text-slate-300 whitespace-nowrap">@t.Type</td>
+                                <td class="py-4 px-4 text-xs text-slate-300 whitespace-nowrap">@t.Source</td>
+                                <td class="py-4 px-4 text-xs text-slate-400 whitespace-nowrap">@(t.Department?.Name ?? "Tüm Departmanlar")</td>
+                                <td class="py-4 px-4 whitespace-nowrap">
+                                    @if (t.IsActive)
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">Aktif</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-container-high text-slate-400 border border-white/[0.06]">Pasif</span>
+                                    }
+                                </td>
+                                <td class="py-4 px-5 text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-2">
+                                        <a asp-action="Edit" asp-route-id="@t.Id" class="px-2.5 py-1 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] rounded-md transition-all">
+                                            Düzenle
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="inline"
+                                              onsubmit="return confirm('Bu şablonu silmek istediğinize emin misiniz?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="px-2.5 py-1 text-xs font-medium text-error hover:bg-error/10 rounded-md transition-all cursor-pointer">
+                                                Sil
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

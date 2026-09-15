@@ -1,0 +1,116 @@
+@model IEnumerable<IsoDof.Web.Models.Entities.Dof>
+@using IsoDof.Web.Models.Entities.Enums
+
+@{
+    ViewData["Title"] = "DÖF Kanban Görünümü";
+    var columns = new (DofStatus Status, string Label, string Icon)[]
+    {
+        (DofStatus.Acik, "Açık", "inbox"),
+        (DofStatus.Incelemede, "İncelemede", "visibility"),
+        (DofStatus.FaaliyetPlanlandi, "Faaliyet Planlandı", "fact_check"),
+        (DofStatus.Kapatildi, "Kapatıldı", "task_alt"),
+    };
+    var byStatus = Model.GroupBy(d => d.Status).ToDictionary(g => g.Key, g => g.ToList());
+}
+
+<div class="flex flex-col w-full gap-space-lg">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md bg-surface-container-low p-space-md rounded-xl shadow-md border border-outline-variant/20">
+        <div class="flex items-center gap-space-sm">
+            <h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">DÖF Kanban Görünümü</h1>
+        </div>
+        <div class="flex items-center gap-space-xs">
+            <select onchange="window.location = '@Url.Action("Kanban")' + '?departmentId=' + this.value"
+                    class="bg-surface-container text-on-surface font-label-sm text-label-sm px-space-sm py-space-xs rounded-lg border border-outline-variant/30 focus:outline-none focus:border-primary">
+                <option value="">Tüm Departmanlar</option>
+                @foreach (var item in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.Departments)
+                {
+                    if (item.Selected)
+                    {
+                        <option value="@item.Value" selected>@item.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                }
+            </select>
+            <a asp-action="Index" class="inline-flex items-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-on-surface px-space-sm py-space-xs rounded-lg font-label-sm text-label-sm border border-outline-variant/30 transition-colors">
+                <span class="material-symbols-outlined text-[1rem]">table_rows</span>
+                <span>Liste Görünümü</span>
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="p-space-sm bg-error-container/20 text-error rounded-lg border border-error/30 flex items-center gap-space-sm">
+            <span class="material-symbols-outlined text-[1.25rem]">warning</span>
+            <span class="font-body-sm text-body-sm font-medium">@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md items-start">
+        @foreach (var col in columns)
+        {
+            var items = byStatus.TryGetValue(col.Status, out var list) ? list : new List<IsoDof.Web.Models.Entities.Dof>();
+            <div class="bg-surface-container-low rounded-xl shadow-md border border-outline-variant/20 flex flex-col gap-space-sm p-space-sm min-h-[200px]">
+                <div class="flex items-center justify-between px-space-xs pt-space-2xs">
+                    <div class="flex items-center gap-space-2xs text-on-surface font-label-md text-label-md font-bold">
+                        <span class="material-symbols-outlined text-[1.1rem] text-primary">@col.Icon</span>
+                        <span>@col.Label</span>
+                    </div>
+                    <span class="font-code-sm text-code-sm bg-surface-container px-space-xs py-space-2xs rounded-full text-on-surface-variant border border-outline-variant/20">@items.Count</span>
+                </div>
+
+                <div class="flex flex-col gap-space-xs">
+                    @if (!items.Any())
+                    {
+                        <div class="text-center text-outline text-xs py-space-md">Kayıt yok</div>
+                    }
+                    @foreach (var dof in items)
+                    {
+                        <div class="bg-surface-container rounded-lg border border-outline-variant/20 p-space-sm flex flex-col gap-space-2xs hover:border-primary/40 transition-colors">
+                            <a asp-action="Details" asp-route-id="@dof.Id" class="font-code-sm text-code-sm font-bold text-primary hover:underline">
+                                DÖF-#@dof.Id.ToString("D4")
+                            </a>
+                            <span class="font-label-sm text-label-sm font-semibold text-on-surface line-clamp-2">@dof.Title</span>
+                            <div class="flex items-center justify-between text-[11px] text-on-surface-variant">
+                                <span>@(dof.AssignedToUser?.FullName ?? "Atanmadı")</span>
+                                @if (dof.IsOverdue)
+                                {
+                                    <span class="text-error font-semibold">Gecikmiş</span>
+                                }
+                                else if (dof.DueDate.HasValue)
+                                {
+                                    <span>@dof.DueDate.Value.ToString("dd.MM.yyyy")</span>
+                                }
+                            </div>
+
+                            @{
+                                var nextTargets = col.Status switch
+                                {
+                                    DofStatus.Acik => new[] { DofStatus.Incelemede },
+                                    DofStatus.Incelemede => new[] { DofStatus.FaaliyetPlanlandi },
+                                    DofStatus.FaaliyetPlanlandi => new[] { DofStatus.Kapatildi },
+                                    _ => Array.Empty<DofStatus>()
+                                };
+                            }
+                            @if (nextTargets.Length > 0)
+                            {
+                                <form asp-action="QuickStatus" method="post" class="pt-space-2xs">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@dof.Id" />
+                                    <input type="hidden" name="newStatus" value="@nextTargets[0]" />
+                                    <button type="submit" class="w-full inline-flex items-center justify-center gap-1 px-space-xs py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-semibold border border-primary/25 transition-colors">
+                                        <span class="material-symbols-outlined text-[0.9rem]">arrow_forward</span>
+                                        <span>@nextTargets[0]</span>
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<DofAttachment> DofAttachments { get; set; }
     public DbSet<DofStatusHistory> DofStatusHistories => Set<DofStatusHistory>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<DofTemplate> DofTemplates => Set<DofTemplate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -99,5 +100,17 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Notification>()
             .HasIndex(n => new { n.RecipientUserId, n.IsRead });
+
+        modelBuilder.Entity<Dof>()
+            .HasOne(d => d.EffectivenessCheckedByUser)
+            .WithMany()
+            .HasForeignKey(d => d.EffectivenessCheckedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DofTemplate>()
+            .HasOne(t => t.Department)
+            .WithMany()
+            .HasForeignKey(t => t.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

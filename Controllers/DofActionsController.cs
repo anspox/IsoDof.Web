@@ -88,9 +88,12 @@ public class DofActionsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(DofAction dofAction)
+    public async Task<IActionResult> Create(DofAction dofAction, string? returnUrl = null)
     {
         var currentUser = await _context.AppUsers.FindAsync(CurrentUserId);
+        IActionResult BackOrIndex() => !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? Redirect(returnUrl)
+            : RedirectToAction(nameof(Index));
 
         // Kullanıcı yalnızca kapsamındaki DÖF kayıtlarına faaliyet ekleyebilir
         var targetDof = await AssignableDofsQuery(currentUser).FirstOrDefaultAsync(d => d.Id == dofAction.DofId);
@@ -99,7 +102,7 @@ public class DofActionsController : Controller
             TempData["ErrorMessage"] = User.IsInRole("Admin") || User.IsInRole("KaliteKontrol")
                 ? "Seçilen DÖF kaydına faaliyet ekleyemezsiniz."
                 : "Yalnızca kendi açtığınız DÖF kayıtlarına faaliyet adımı ekleyebilirsiniz.";
-            return RedirectToAction(nameof(Index));
+            return BackOrIndex();
         }
 
         // Sorumlu kişi, seçilen DÖF'ün departmanında olmalı
@@ -110,7 +113,7 @@ public class DofActionsController : Controller
             if (!respInDept)
             {
                 TempData["ErrorMessage"] = "Sorumlu kişi, seçilen DÖF'ün departmanında yer alan bir kullanıcı olmalıdır.";
-                return RedirectToAction(nameof(Index));
+                return BackOrIndex();
             }
         }
 
@@ -118,8 +121,15 @@ public class DofActionsController : Controller
         {
             _context.DofActions.Add(dofAction);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return BackOrIndex();
         }
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            TempData["ErrorMessage"] = "Faaliyet adımı eklenemedi. Lütfen açıklama alanını kontrol edin.";
+            return Redirect(returnUrl);
+        }
+
         ViewBag.Dofs = new SelectList(
             await AssignableDofsQuery(currentUser).OrderByDescending(d => d.Id).ToListAsync(),
             "Id", "Title");
@@ -147,7 +157,7 @@ public class DofActionsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Complete(int id)
+    public async Task<IActionResult> Complete(int id, string? returnUrl = null)
     {
         var action = await _context.DofActions.FindAsync(id);
         if (action != null)
@@ -155,6 +165,10 @@ public class DofActionsController : Controller
             action.CompletedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
         return RedirectToAction(nameof(Index));
     }
         public async Task<IActionResult> Edit(int id)

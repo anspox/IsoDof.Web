@@ -124,6 +124,13 @@
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
+        /* Koyu tema kullanıldığından, tarayıcının native form kontrollerini (select
+           açılır listesi, checkbox vb.) de koyu şemayla çizmesini sağlıyoruz.
+           Aksi halde Firefox gibi tarayıcılarda select popup'ı açık renk metni
+           varsayılan beyaz zeminle çizer ve yazılar görünmez hale gelir. */
+        html, select, option {
+            color-scheme: dark;
+        }
     </style>
 </head>
 <body class="bg-surface font-sans text-on-surface antialiased">
@@ -166,6 +173,15 @@
                         <span class="material-symbols-outlined text-[1.25rem] opacity-70">task_alt</span>
                         <span class="font-label-md text-sm font-medium">Faaliyetler</span>
                     </a>
+
+                    @if (User.IsInRole("Admin") || User.IsInRole("KaliteKontrol"))
+                    {
+                        <a asp-controller="DofTemplates" asp-action="Index"
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors @(ViewContext.RouteData.Values["Controller"]?.ToString() == "DofTemplates" ? "bg-primary/10 text-primary border border-primary/20 font-semibold" : "text-on-surface-variant hover:text-white hover:bg-white/[0.04]")">
+                            <span class="material-symbols-outlined text-[1.25rem] opacity-70">description</span>
+                            <span class="font-label-md text-sm font-medium">DÖF Şablonları</span>
+                        </a>
+                    }
 
                     @if (User.IsInRole("Admin"))
                     {

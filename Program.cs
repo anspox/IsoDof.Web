@@ -44,6 +44,8 @@ builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IDofReportService, DofReportService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserImportParser, UserImportParser>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddHostedService<DofReminderBackgroundService>();
 
 var app = builder.Build();
 

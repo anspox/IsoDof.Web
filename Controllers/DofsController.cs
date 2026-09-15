@@ -20,14 +20,50 @@ public class DofsController : Controller
     private readonly IEmailService _emailService;
     private readonly IDofReportService _reportService;
     private readonly INotificationService _notifications;
+    private readonly IFileStorageService _fileStorage;
 
     public DofsController(AppDbContext context, IEmailService emailService,
-        IDofReportService reportService, INotificationService notifications)
+        IDofReportService reportService, INotificationService notifications,
+        IFileStorageService fileStorage)
     {
         _context = context;
         _emailService = emailService;
         _reportService = reportService;
         _notifications = notifications;
+        _fileStorage = fileStorage;
+    }
+
+    // --- Durum geçiş kuralları (state machine) ---
+    // Anahtar: mevcut durum, Değer: geçilebilecek durumlar
+    private static readonly Dictionary<DofStatus, DofStatus[]> AllowedTransitions = new()
+    {
+        [DofStatus.Acik] = new[] { DofStatus.Incelemede, DofStatus.Reddedildi },
+        [DofStatus.Incelemede] = new[] { DofStatus.Acik, DofStatus.FaaliyetPlanlandi, DofStatus.Reddedildi },
+        [DofStatus.FaaliyetPlanlandi] = new[] { DofStatus.Incelemede, DofStatus.Kapatildi },
+        [DofStatus.Kapatildi] = new[] { DofStatus.Incelemede },
+        [DofStatus.Reddedildi] = new[] { DofStatus.Acik },
+    };
+
+    // Durum geçişinin iş kurallarına uygun olup olmadığını doğrular.
+    private bool TryValidateStatusTransition(Dof existing, DofStatus newStatus, out string? error)
+    {
+        error = null;
+        if (existing.Status == newStatus)
+            return true;
+
+        if (!AllowedTransitions.TryGetValue(existing.Status, out var allowed) || !allowed.Contains(newStatus))
+        {
+            error = $"'{existing.Status}' durumundan '{newStatus}' durumuna geçiş yapılamaz.";
+            return false;
+        }
+
+        if (newStatus == DofStatus.Kapatildi && existing.Actions.Any(a => !a.IsCompleted))
+        {
+            error = "Tamamlanmamış faaliyet adımları olan bir DÖF kapatılamaz. Önce tüm faaliyetleri tamamlayın.";
+            return false;
+        }
+
+        return true;
     }
 
     private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -43,7 +79,8 @@ public class DofsController : Controller
     }
 
     // Index ve export'ların paylaştığı ortak sorgu (filtre + yetki kapsamı + sıralama)
-    private IQueryable<Dof> BuildDofQuery(int? departmentId, DofStatus? status, string? sortOrder, bool showArchived)
+    private IQueryable<Dof> BuildDofQuery(int? departmentId, DofStatus? status, string? sortOrder, bool showArchived,
+        string? search = null, string? quickFilter = null)
     {
         var query = _context.Dofs
             .Include(d => d.Department)
@@ -82,6 +119,35 @@ public class DofsController : Controller
         if (status.HasValue)
             query = query.Where(d => d.Status == status.Value);
 
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            var normalizedNumber = term.TrimStart('#', 'D', 'd', '-', '0');
+            query = query.Where(d =>
+                d.Title.Contains(term) ||
+                d.Description.Contains(term) ||
+                d.Id.ToString() == term ||
+                (normalizedNumber != "" && d.Id.ToString() == normalizedNumber));
+        }
+
+        switch (quickFilter)
+        {
+            case "mine":
+                query = query.Where(d => d.AssignedToUserId == CurrentUserId);
+                break;
+            case "overdue":
+                query = query.Where(d => d.DueDate.HasValue && DateTime.UtcNow > d.DueDate.Value
+                    && d.Status != DofStatus.Kapatildi && d.Status != DofStatus.Reddedildi);
+                break;
+            case "open":
+                query = query.Where(d => d.Status != DofStatus.Kapatildi && d.Status != DofStatus.Reddedildi);
+                break;
+            case "recent7":
+                var since = DateTime.UtcNow.AddDays(-7);
+                query = query.Where(d => d.CreatedAt >= since);
+                break;
+        }
+
         query = sortOrder switch
         {
             "duedate_asc" => query.OrderBy(d => d.DueDate),
@@ -94,9 +160,9 @@ public class DofsController : Controller
     }
 
     public async Task<IActionResult> Index(int? departmentId, DofStatus? status, string? sortOrder,
-        bool showArchived = false, int page = 1)
+        bool showArchived = false, int page = 1, string? search = null, string? quickFilter = null)
     {
-        var query = BuildDofQuery(departmentId, status, sortOrder, showArchived);
+        var query = BuildDofQuery(departmentId, status, sortOrder, showArchived, search, quickFilter);
         var pagedDofs = await PagedList<Dof>.CreateAsync(query, page, DefaultPageSize);
 
         ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", departmentId);
@@ -107,6 +173,8 @@ public class DofsController : Controller
         ViewBag.ShowArchived = showArchived;
         ViewBag.DepartmentId = departmentId;
         ViewBag.Status = status;
+        ViewBag.Search = search;
+        ViewBag.QuickFilter = quickFilter;
 
         if (User.IsInRole("KaliteKontrol"))
         {
@@ -122,18 +190,20 @@ public class DofsController : Controller
 
     // --- Excel / PDF export ---
 
-    public async Task<IActionResult> ExportExcel(int? departmentId, DofStatus? status, string? sortOrder, bool showArchived = false)
+    public async Task<IActionResult> ExportExcel(int? departmentId, DofStatus? status, string? sortOrder, bool showArchived = false,
+        string? search = null, string? quickFilter = null)
     {
-        var dofs = await BuildDofQuery(departmentId, status, sortOrder, showArchived).ToListAsync();
+        var dofs = await BuildDofQuery(departmentId, status, sortOrder, showArchived, search, quickFilter).ToListAsync();
         var bytes = _reportService.BuildExcel(dofs);
         return File(bytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"DOF-Kayitlari-{DateTime.Now:yyyyMMdd-HHmm}.xlsx");
     }
 
-    public async Task<IActionResult> ExportPdf(int? departmentId, DofStatus? status, string? sortOrder, bool showArchived = false)
+    public async Task<IActionResult> ExportPdf(int? departmentId, DofStatus? status, string? sortOrder, bool showArchived = false,
+        string? search = null, string? quickFilter = null)
     {
-        var dofs = await BuildDofQuery(departmentId, status, sortOrder, showArchived).ToListAsync();
+        var dofs = await BuildDofQuery(departmentId, status, sortOrder, showArchived, search, quickFilter).ToListAsync();
         var title = showArchived ? "DÖF Kayıtları (Arşiv)" : "DÖF Kayıtları";
         var bytes = _reportService.BuildPdf(dofs, title);
         return File(bytes, "application/pdf", $"DOF-Kayitlari-{DateTime.Now:yyyyMMdd-HHmm}.pdf");
@@ -150,6 +220,9 @@ public class DofsController : Controller
         ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name");
         ViewBag.Users = new SelectList(_context.AppUsers.OrderBy(u => u.FullName), "Id", "FullName");
         ViewBag.CurrentUserName = (await _context.AppUsers.FindAsync(CurrentUserId))?.FullName;
+        ViewBag.Templates = new SelectList(
+            await _context.DofTemplates.Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync(),
+            "Id", "Name");
         return View();
     }
 
@@ -225,24 +298,14 @@ public class DofsController : Controller
             // Varsa dosya ekini kaydet
             if (file != null && file.Length > 0)
             {
-                var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".docx", ".xlsx" };
-                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (allowedExtensions.Contains(extension) && file.Length <= 10 * 1024 * 1024)
+                var uploadResult = await _fileStorage.SaveAsync(file, "dof-attachments");
+                if (uploadResult.Success)
                 {
-                    var uploadsFolder = Path.Combine("wwwroot", "uploads", "dof-attachments");
-                    Directory.CreateDirectory(uploadsFolder);
-                    var storedFileName = $"{Guid.NewGuid()}{extension}";
-                    var filePath = Path.Combine(uploadsFolder, storedFileName);
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-                    }
-
                     _context.DofAttachments.Add(new DofAttachment
                     {
                         DofId = dof.Id,
                         FileName = file.FileName,
-                        StoredFileName = storedFileName,
+                        StoredFileName = uploadResult.StoredFileName!,
                         UploadedByUserId = CurrentUserId
                     });
                     await _context.SaveChangesAsync();
@@ -309,7 +372,7 @@ public class DofsController : Controller
             return NotFound();
         }
 
-        var existing = await _context.Dofs.FirstOrDefaultAsync(d => d.Id == id);
+        var existing = await _context.Dofs.Include(d => d.Actions).FirstOrDefaultAsync(d => d.Id == id);
         if (existing == null)
         {
             return NotFound();
@@ -317,6 +380,9 @@ public class DofsController : Controller
 
         if (dof.DueDate.HasValue && dof.DueDate.Value.Date < DateTime.UtcNow.Date)
             ModelState.AddModelError(nameof(dof.DueDate), "Son tarih geçmiş bir tarih olamaz.");
+
+        if (!TryValidateStatusTransition(existing, dof.Status, out var transitionError))
+            ModelState.AddModelError(nameof(dof.Status), transitionError!);
 
         if (ModelState.IsValid)
         {
@@ -332,14 +398,28 @@ public class DofsController : Controller
             existing.CreatedByUserId = dof.CreatedByUserId;
             existing.AssignedToUserId = dof.AssignedToUserId;
             existing.DueDate = dof.DueDate;
+            existing.RootCauseCategory = dof.RootCauseCategory;
+            existing.RootCauseWhy1 = dof.RootCauseWhy1;
+            existing.RootCauseWhy2 = dof.RootCauseWhy2;
+            existing.RootCauseWhy3 = dof.RootCauseWhy3;
+            existing.RootCauseWhy4 = dof.RootCauseWhy4;
+            existing.RootCauseWhy5 = dof.RootCauseWhy5;
+            existing.RootCauseAnalysis = dof.RootCauseAnalysis;
 
             if (oldStatus != dof.Status)
             {
                 // Kapanış tarihini duruma göre ayarla
                 if (dof.Status == DofStatus.Kapatildi)
+                {
                     existing.ClosedAt = DateTime.UtcNow;
+                    existing.EffectivenessCheckDueDate = DateTime.UtcNow.AddDays(30);
+                    existing.EffectivenessResult = EffectivenessResult.Beklemede;
+                }
                 else if (oldStatus == DofStatus.Kapatildi)
+                {
                     existing.ClosedAt = null;
+                    existing.EffectivenessCheckDueDate = null;
+                }
 
                 // Denetim izi kaydı
                 _context.DofStatusHistories.Add(new DofStatusHistory
@@ -506,36 +586,11 @@ public class DofsController : Controller
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> UploadAttachment(int dofId, IFormFile file)
 {
-    if (file == null || file.Length == 0)
+    var uploadResult = await _fileStorage.SaveAsync(file, "dof-attachments");
+    if (!uploadResult.Success)
     {
-        TempData["UploadError"] = "Lütfen bir dosya seçin.";
+        TempData["UploadError"] = uploadResult.ErrorMessage;
         return RedirectToAction(nameof(Details), new { id = dofId });
-    }
-
-    var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".docx", ".xlsx" };
-    var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-    if (!allowedExtensions.Contains(extension))
-    {
-        TempData["UploadError"] = "İzin verilmeyen dosya türü. (İzin verilenler: pdf, jpg, png, docx, xlsx)";
-        return RedirectToAction(nameof(Details), new { id = dofId });
-    }
-
-    const long maxSize = 10 * 1024 * 1024; // 10 MB
-    if (file.Length > maxSize)
-    {
-        TempData["UploadError"] = "Dosya boyutu 10 MB'ı geçemez.";
-        return RedirectToAction(nameof(Details), new { id = dofId });
-    }
-
-    var uploadsFolder = Path.Combine("wwwroot", "uploads", "dof-attachments");
-    Directory.CreateDirectory(uploadsFolder);
-
-    var storedFileName = $"{Guid.NewGuid()}{extension}";
-    var filePath = Path.Combine(uploadsFolder, storedFileName);
-
-    using (var stream = new FileStream(filePath, FileMode.Create))
-    {
-        await file.CopyToAsync(stream);
     }
 
     var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -543,8 +598,8 @@ public async Task<IActionResult> UploadAttachment(int dofId, IFormFile file)
     var attachment = new DofAttachment
     {
         DofId = dofId,
-        FileName = file.FileName,
-        StoredFileName = storedFileName,
+        FileName = file!.FileName,
+        StoredFileName = uploadResult.StoredFileName!,
         UploadedByUserId = currentUserId
     };
 
@@ -553,4 +608,100 @@ public async Task<IActionResult> UploadAttachment(int dofId, IFormFile file)
 
     return RedirectToAction(nameof(Details), new { id = dofId });
 }
+
+    // --- Hızlı durum aksiyonları (Details sayfasındaki tek tıkla butonlar) ---
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> QuickStatus(int id, DofStatus newStatus)
+    {
+        var dof = await _context.Dofs.Include(d => d.Actions).FirstOrDefaultAsync(d => d.Id == id);
+        if (dof == null)
+        {
+            return NotFound();
+        }
+
+        if (!TryValidateStatusTransition(dof, newStatus, out var error))
+        {
+            TempData["ErrorMessage"] = error;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var oldStatus = dof.Status;
+        dof.Status = newStatus;
+
+        if (newStatus == DofStatus.Kapatildi)
+        {
+            dof.ClosedAt = DateTime.UtcNow;
+            dof.EffectivenessCheckDueDate = DateTime.UtcNow.AddDays(30);
+            dof.EffectivenessResult = EffectivenessResult.Beklemede;
+        }
+        else if (oldStatus == DofStatus.Kapatildi)
+        {
+            dof.ClosedAt = null;
+            dof.EffectivenessCheckDueDate = null;
+        }
+
+        _context.DofStatusHistories.Add(new DofStatusHistory
+        {
+            DofId = dof.Id,
+            OldStatus = oldStatus,
+            NewStatus = newStatus,
+            ChangedByUserId = CurrentUserId,
+            Note = "Hızlı aksiyon ile değiştirildi"
+        });
+
+        await _context.SaveChangesAsync();
+
+        await _notifications.NotifyManyAsync(
+            new int?[] { dof.AssignedToUserId, dof.CreatedByUserId }
+                .Where(uid => uid != CurrentUserId),
+            $"DÖF #{dof.Id} durumu güncellendi: {oldStatus} → {newStatus}",
+            Url.Action(nameof(Details), "Dofs", new { id = dof.Id }),
+            "sync_alt");
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // --- Etkinlik Takibi: kapatılan DÖF'ün alınan önlemin kalıcı olup olmadığının doğrulanması ---
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EvaluateEffectiveness(int id, EffectivenessResult result, string? notes)
+    {
+        var dof = await _context.Dofs.FirstOrDefaultAsync(d => d.Id == id);
+        if (dof == null || dof.Status != DofStatus.Kapatildi)
+        {
+            return NotFound();
+        }
+
+        dof.EffectivenessResult = result;
+        dof.EffectivenessNotes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        dof.EffectivenessCheckedAt = DateTime.UtcNow;
+        dof.EffectivenessCheckedByUserId = CurrentUserId;
+
+        await _context.SaveChangesAsync();
+
+        if (result == EffectivenessResult.TekrarEtti)
+        {
+            await _notifications.NotifyManyAsync(
+                new int?[] { dof.AssignedToUserId, dof.CreatedByUserId }
+                    .Where(uid => uid != CurrentUserId),
+                $"DÖF #{dof.Id} için etkinlik değerlendirmesi: Sorun tekrar etti, yeniden değerlendirme gerekebilir.",
+                Url.Action(nameof(Details), "Dofs", new { id = dof.Id }),
+                "warning");
+        }
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // --- Kanban görünümü ---
+    public async Task<IActionResult> Kanban(int? departmentId)
+    {
+        var query = BuildDofQuery(departmentId, null, null, false);
+        var dofs = await query.ToListAsync();
+
+        ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", departmentId);
+        ViewBag.DepartmentId = departmentId;
+
+        return View(dofs);
+    }
 }

@@ -55,6 +55,28 @@ public class Dof
     [MaxLength(500)]
     public string? ArchiveReason { get; set; }
 
+    // --- Kök Neden Analizi (Ishikawa / 5 Neden) ---
+    public RootCauseCategory? RootCauseCategory { get; set; }
+    public string? RootCauseAnalysis { get; set; }
+    [MaxLength(300)] public string? RootCauseWhy1 { get; set; }
+    [MaxLength(300)] public string? RootCauseWhy2 { get; set; }
+    [MaxLength(300)] public string? RootCauseWhy3 { get; set; }
+    [MaxLength(300)] public string? RootCauseWhy4 { get; set; }
+    [MaxLength(300)] public string? RootCauseWhy5 { get; set; }
+
+    // --- Etkinlik Takibi (kapatıldıktan sonraki doğrulama) ---
+    public DateTime? EffectivenessCheckDueDate { get; set; }
+    public EffectivenessResult EffectivenessResult { get; set; } = EffectivenessResult.Beklemede;
+    public DateTime? EffectivenessCheckedAt { get; set; }
+    public int? EffectivenessCheckedByUserId { get; set; }
+    [ForeignKey(nameof(EffectivenessCheckedByUserId))]
+    public AppUser? EffectivenessCheckedByUser { get; set; }
+    [MaxLength(1000)] public string? EffectivenessNotes { get; set; }
+    public DateTime? EffectivenessReminderSentAt { get; set; }
+
+    // --- SLA hatırlatma tekrarını önlemek için ---
+    public int? LastSlaReminderDaysBefore { get; set; }
+
     public ICollection<DofAction> Actions { get; set; } = new List<DofAction>();
     public ICollection<DofComment> Comments { get; set; } = new List<DofComment>();
     public ICollection<DofAttachment> Attachments { get; set; } = new List<DofAttachment>();
