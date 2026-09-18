@@ -6,23 +6,51 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-        
+
     - name: Restore dependencies
       run: dotnet restore IsoDof.sln
-      
+
+    - name: Check for vulnerable NuGet packages
+      shell: bash
+      run: |
+        OUTPUT=$(dotnet list IsoDof.sln package --vulnerable --include-transitive 2>&1)
+        echo "$OUTPUT"
+        if echo "$OUTPUT" | grep -q "has the following vulnerable packages"; then
+          echo "::error::Bilinen güvenlik açığı olan NuGet paketleri bulundu, yukarıdaki listeye bak."
+          exit 1
+        fi
+
     - name: Build
       run: dotnet build IsoDof.sln --no-restore
-      
+
     - name: Test
-      run: dotnet test IsoDof.sln --no-build --verbosity normal
+      run: >
+        dotnet test IsoDof.sln --no-build --verbosity normal
+        --logger "trx;LogFileName=test-results.trx"
+        --results-directory TestResults
+      continue-on-error: true
+
+    - name: Test Sonuçları Özeti
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: 'Test Sonuçları'
+        path: 'TestResults/*.trx'
+        reporter: dotnet-trx
+        fail-on-error: true

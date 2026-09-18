@@ -18,6 +18,7 @@
 *.binlog
 restore-out.txt
 *.tmp
+TestResults/
 
 # User-specific files
 appsettings.Production.json
