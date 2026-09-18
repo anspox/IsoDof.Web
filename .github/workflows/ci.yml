@@ -26,16 +26,6 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore IsoDof.sln
 
-    - name: Check for vulnerable NuGet packages
-      shell: bash
-      run: |
-        OUTPUT=$(dotnet list IsoDof.sln package --vulnerable --include-transitive 2>&1)
-        echo "$OUTPUT"
-        if echo "$OUTPUT" | grep -q "has the following vulnerable packages"; then
-          echo "::error::Bilinen güvenlik açığı olan NuGet paketleri bulundu, yukarıdaki listeye bak."
-          exit 1
-        fi
-
     - name: Build
       run: dotnet build IsoDof.sln --no-restore
 
@@ -54,3 +44,14 @@ jobs:
         path: 'TestResults/*.trx'
         reporter: dotnet-trx
         fail-on-error: true
+
+    - name: Check for vulnerable NuGet packages
+      if: always()
+      shell: bash
+      run: |
+        OUTPUT=$(dotnet list IsoDof.sln package --vulnerable --include-transitive 2>&1)
+        echo "$OUTPUT"
+        if echo "$OUTPUT" | grep -q "has the following vulnerable packages"; then
+          echo "::error::Bilinen güvenlik açığı olan NuGet paketleri bulundu, yukarıdaki listeye bak."
+          exit 1
+        fi
