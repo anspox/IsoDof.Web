@@ -80,7 +80,8 @@
                 <input type="password" name="newPassword" 
                        placeholder="Değiştirmek istemiyorsanız boş bırakın"
                        class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] text-white placeholder:text-outline/50 rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors" />
-                <p class="text-[11px] text-outline/70">Yalnızca şifreyi güncellemek istiyorsanız doldurun.</p>
+                <span class="text-[11px] text-error">@Html.ValidationMessage("NewPassword")</span>
+                <p class="text-[11px] text-outline/70">Yalnızca şifreyi sıfırlamak istiyorsanız doldurun. Kullanıcı bir sonraki girişinde bu şifreyi değiştirmek zorunda kalır ve varsa hesap kilidi kaldırılır. @IsoDof.Web.Services.PasswordPolicy.Description</p>
             </div>
 
             <div class="pt-4 flex items-center justify-between border-t border-white/[0.04]">

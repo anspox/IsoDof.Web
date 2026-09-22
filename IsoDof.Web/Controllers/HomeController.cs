@@ -95,14 +95,17 @@ public class HomeController : Controller
         return View(model);
     }
 
+    // KVKK aydınlatma metni giriş yapmadan da okunabilmelidir.
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     public IActionResult Privacy()
     {
         return View();
     }
 
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
+    public IActionResult Error(int? statusCode = null)
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier, StatusCode = statusCode });
     }
 }

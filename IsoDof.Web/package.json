@@ -1,0 +1,13 @@
+{
+  "name": "isodof-web",
+  "private": true,
+  "description": "Tailwind CSS derlemesi. Çıktı (wwwroot/css/app.min.css) repoya eklenir; sunucuda Node gerekmez.",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i Styles/app.css -o wwwroot/css/app.min.css --minify",
+    "watch:css": "tailwindcss -c tailwind.config.js -i Styles/app.css -o wwwroot/css/app.min.css --watch"
+  },
+  "devDependencies": {
+    "sortablejs": "^1.15.7",
+    "tailwindcss": "^3.4.17"
+  }
+}

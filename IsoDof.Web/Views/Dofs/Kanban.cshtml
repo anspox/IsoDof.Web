@@ -1,25 +1,49 @@
 @model IEnumerable<IsoDof.Web.Models.Entities.Dof>
 @using IsoDof.Web.Models.Entities.Enums
+@using IsoDof.Web.Controllers
 
 @{
     ViewData["Title"] = "DÖF Kanban Görünümü";
-    var columns = new (DofStatus Status, string Label, string Icon)[]
+    var columns = new (DofStatus Status, string Icon)[]
     {
-        (DofStatus.Acik, "Açık", "inbox"),
-        (DofStatus.Incelemede, "İncelemede", "visibility"),
-        (DofStatus.FaaliyetPlanlandi, "Faaliyet Planlandı", "fact_check"),
-        (DofStatus.Kapatildi, "Kapatıldı", "task_alt"),
+        (DofStatus.Acik, "inbox"),
+        (DofStatus.Incelemede, "visibility"),
+        (DofStatus.FaaliyetPlanlandi, "fact_check"),
+        (DofStatus.Kapatildi, "task_alt"),
+        (DofStatus.Reddedildi, "block"),
     };
     var byStatus = Model.GroupBy(d => d.Status).ToDictionary(g => g.Key, g => g.ToList());
+
+    // Kartlardaki "ileri taşı" butonu için doğal akıştaki sonraki durum
+    DofStatus? NextStatus(DofStatus s) => s switch
+    {
+        DofStatus.Acik => DofStatus.Incelemede,
+        DofStatus.Incelemede => DofStatus.FaaliyetPlanlandi,
+        DofStatus.FaaliyetPlanlandi => DofStatus.Kapatildi,
+        _ => null
+    };
+
+    // Sürükle-bırak için istemci tarafı kurallar (asıl doğrulama sunucuda yapılır)
+    var transitions = DofsController.StatusTransitions.ToDictionary(
+        kv => kv.Key.ToString(), kv => kv.Value.Select(v => v.ToString()).ToArray());
+    var labels = Enum.GetValues<DofStatus>().ToDictionary(s => s.ToString(), s => s.ToLabel());
+    var nextMap = Enum.GetValues<DofStatus>().ToDictionary(s => s.ToString(), s => NextStatus(s)?.ToString());
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
 <div class="flex flex-col w-full gap-space-lg">
+    @Html.AntiForgeryToken()
+
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md bg-surface-container-low p-space-md rounded-xl shadow-md border border-outline-variant/20">
-        <div class="flex items-center gap-space-sm">
+        <div class="flex flex-col gap-1">
             <h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">DÖF Kanban Görünümü</h1>
+            <p class="flex items-center gap-1 text-xs text-on-surface-variant">
+                <span class="material-symbols-outlined text-[1rem] text-primary">drag_pan</span>
+                <span>Kartları tutup ilgili sütuna sürükleyerek durumlarını değiştirebilirsiniz.</span>
+            </p>
         </div>
         <div class="flex items-center gap-space-xs">
-            <select onchange="window.location = '@Url.Action("Kanban")' + '?departmentId=' + this.value"
+            <select onchange="window.location = '@Url.Action("Kanban")' + '?departmentId=' + this.value" aria-label="Departman filtresi"
                     class="bg-surface-container text-on-surface font-label-sm text-label-sm px-space-sm py-space-xs rounded-lg border border-outline-variant/30 focus:outline-none focus:border-primary">
                 <option value="">Tüm Departmanlar</option>
                 @foreach (var item in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.Departments)
@@ -49,68 +73,252 @@
         </div>
     }
 
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md items-start">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-space-md items-start">
         @foreach (var col in columns)
         {
             var items = byStatus.TryGetValue(col.Status, out var list) ? list : new List<IsoDof.Web.Models.Entities.Dof>();
-            <div class="bg-surface-container-low rounded-xl shadow-md border border-outline-variant/20 flex flex-col gap-space-sm p-space-sm min-h-[200px]">
+            <section class="kanban-column bg-surface-container-low rounded-xl shadow-md border border-outline-variant/20 flex flex-col gap-space-sm p-space-sm transition-all duration-150"
+                     data-status="@col.Status" aria-label="@col.Status.ToLabel() sütunu">
                 <div class="flex items-center justify-between px-space-xs pt-space-2xs">
                     <div class="flex items-center gap-space-2xs text-on-surface font-label-md text-label-md font-bold">
                         <span class="material-symbols-outlined text-[1.1rem] text-primary">@col.Icon</span>
-                        <span>@col.Label</span>
+                        <span>@col.Status.ToLabel()</span>
                     </div>
-                    <span class="font-code-sm text-code-sm bg-surface-container px-space-xs py-space-2xs rounded-full text-on-surface-variant border border-outline-variant/20">@items.Count</span>
+                    <span class="kanban-count font-code-sm text-code-sm bg-surface-container px-space-xs py-space-2xs rounded-full text-on-surface-variant border border-outline-variant/20">@items.Count</span>
                 </div>
 
-                <div class="flex flex-col gap-space-xs">
-                    @if (!items.Any())
-                    {
-                        <div class="text-center text-outline text-xs py-space-md">Kayıt yok</div>
-                    }
+                <div class="relative">
+                <!-- Katmanlar listenin üzerine biner; sürükleme sırasında sayfa düzeni kaymaz -->
+                <div class="kanban-empty @(items.Any() ? "hidden" : "") absolute inset-0 flex items-center justify-center text-outline text-xs pointer-events-none">Kayıt yok</div>
+                <div class="kanban-hint hidden absolute inset-0 z-10 flex items-center justify-center text-center text-[11px] font-medium text-on-surface-variant bg-surface-container-low/85 rounded-lg px-space-sm pointer-events-none"></div>
+
+                <div class="kanban-list flex flex-col gap-space-xs min-h-[120px] rounded-lg" data-status="@col.Status">
                     @foreach (var dof in items)
                     {
-                        <div class="bg-surface-container rounded-lg border border-outline-variant/20 p-space-sm flex flex-col gap-space-2xs hover:border-primary/40 transition-colors">
-                            <a asp-action="Details" asp-route-id="@dof.Id" class="font-code-sm text-code-sm font-bold text-primary hover:underline">
-                                DÖF-#@dof.Id.ToString("D4")
-                            </a>
+                        var openActions = dof.Actions.Count(a => !a.IsCompleted);
+                        var next = NextStatus(dof.Status);
+                        <article class="kanban-card bg-surface-container rounded-lg border border-outline-variant/20 p-space-sm flex flex-col gap-space-2xs hover:border-primary/40 transition-colors cursor-grab active:cursor-grabbing select-none"
+                                 data-id="@dof.Id" data-status="@dof.Status" data-open-actions="@openActions" data-code="DÖF-#@dof.Id.ToString("D4")">
+                            <div class="flex items-start justify-between gap-2">
+                                <a asp-action="Details" asp-route-id="@dof.Id" class="font-code-sm text-code-sm font-bold text-primary hover:underline" draggable="false">
+                                    DÖF-#@dof.Id.ToString("D4")
+                                </a>
+                                <span class="material-symbols-outlined text-[1rem] text-outline/60" aria-hidden="true">drag_indicator</span>
+                            </div>
                             <span class="font-label-sm text-label-sm font-semibold text-on-surface line-clamp-2">@dof.Title</span>
-                            <div class="flex items-center justify-between text-[11px] text-on-surface-variant">
-                                <span>@(dof.AssignedToUser?.FullName ?? "Atanmadı")</span>
+                            <div class="flex items-center justify-between gap-2 text-[11px] text-on-surface-variant">
+                                <span class="truncate">@(dof.AssignedToUser?.FullName ?? "Atanmadı")</span>
                                 @if (dof.IsOverdue)
                                 {
-                                    <span class="text-error font-semibold">Gecikmiş</span>
+                                    <span class="text-error font-semibold shrink-0">Gecikmiş</span>
                                 }
                                 else if (dof.DueDate.HasValue)
                                 {
-                                    <span>@dof.DueDate.Value.ToString("dd.MM.yyyy")</span>
+                                    <span class="shrink-0">@dof.DueDate.Value.ToString("dd.MM.yyyy")</span>
                                 }
                             </div>
-
-                            @{
-                                var nextTargets = col.Status switch
-                                {
-                                    DofStatus.Acik => new[] { DofStatus.Incelemede },
-                                    DofStatus.Incelemede => new[] { DofStatus.FaaliyetPlanlandi },
-                                    DofStatus.FaaliyetPlanlandi => new[] { DofStatus.Kapatildi },
-                                    _ => Array.Empty<DofStatus>()
-                                };
-                            }
-                            @if (nextTargets.Length > 0)
+                            @if (openActions > 0)
                             {
-                                <form asp-action="QuickStatus" method="post" class="pt-space-2xs">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@dof.Id" />
-                                    <input type="hidden" name="newStatus" value="@nextTargets[0]" />
-                                    <button type="submit" class="w-full inline-flex items-center justify-center gap-1 px-space-xs py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-semibold border border-primary/25 transition-colors">
-                                        <span class="material-symbols-outlined text-[0.9rem]">arrow_forward</span>
-                                        <span>@nextTargets[0]</span>
-                                    </button>
-                                </form>
+                                <span class="self-start inline-flex items-center gap-1 text-[10px] font-medium text-secondary bg-secondary/10 border border-secondary/20 rounded px-1.5 py-0.5">
+                                    <span class="material-symbols-outlined text-[0.8rem]">pending_actions</span>
+                                    <span>@openActions açık faaliyet</span>
+                                </span>
                             }
-                        </div>
+
+                            <!-- Klavye / erişilebilirlik için sürüklemeye alternatif -->
+                            <form asp-action="QuickStatus" method="post" class="kanban-quick pt-space-2xs @(next == null ? "hidden" : "")">
+                                <input type="hidden" name="id" value="@dof.Id" />
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <input type="hidden" name="newStatus" value="@next" />
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-1 px-space-xs py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-semibold border border-primary/25 transition-colors">
+                                    <span class="material-symbols-outlined text-[0.9rem]">arrow_forward</span>
+                                    <span class="kanban-quick-label">@next?.ToLabel()</span>
+                                </button>
+                            </form>
+                        </article>
                     }
                 </div>
-            </div>
+                </div>
+            </section>
         }
     </div>
 </div>
+
+<!-- Bildirim kutusu -->
+<div id="kanbanToast" role="status" aria-live="polite"
+     class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-[90vw] flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-2xl text-xs font-medium border">
+    <span class="material-symbols-outlined text-[1.1rem]" id="kanbanToastIcon"></span>
+    <span id="kanbanToastText"></span>
+</div>
+
+@section Scripts {
+    <script src="~/lib/sortablejs/Sortable.min.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            const transitions = @Json.Serialize(transitions);
+            const labels = @Json.Serialize(labels);
+            const nextMap = @Json.Serialize(nextMap);
+            const moveUrl = '@Url.Action("MoveStatus")';
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const columns = Array.from(document.querySelectorAll('.kanban-column'));
+
+            // --- Bildirim ---
+            let toastTimer;
+            function toast(message, isError) {
+                const el = document.getElementById('kanbanToast');
+                document.getElementById('kanbanToastText').textContent = message;
+                document.getElementById('kanbanToastIcon').textContent = isError ? 'error' : 'check_circle';
+                el.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-[90vw] flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-2xl text-xs font-medium border ' +
+                    (isError ? 'bg-surface-container-high text-error border-error/40' : 'bg-surface-container-high text-tertiary border-tertiary/40');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => el.classList.add('hidden'), isError ? 6000 : 3000);
+            }
+
+            // --- Bir kartın hedef sütuna taşınıp taşınamayacağı (sunucudaki kuralların aynısı) ---
+            function blockReason(card, targetStatus) {
+                const from = card.dataset.status;
+                if (from === targetStatus) return null;
+                if (!(transitions[from] || []).includes(targetStatus)) {
+                    return labels[from] + ' durumundan buraya taşınamaz';
+                }
+                const open = parseInt(card.dataset.openActions || '0', 10);
+                if (targetStatus === 'Kapatildi' && open > 0) {
+                    return 'Önce ' + open + ' açık faaliyet tamamlanmalı';
+                }
+                return null;
+            }
+
+            function highlightTargets(card) {
+                columns.forEach(col => {
+                    const status = col.dataset.status;
+                    const hint = col.querySelector('.kanban-hint');
+                    const reason = blockReason(card, status);
+                    const isSource = status === card.dataset.status;
+                    col.classList.toggle('ring-2', !reason && !isSource);
+                    col.classList.toggle('ring-primary/50', !reason && !isSource);
+                    hint.textContent = reason || '';
+                    hint.classList.toggle('hidden', !reason);
+                });
+            }
+
+            function clearHighlights() {
+                columns.forEach(col => {
+                    col.classList.remove('ring-2', 'ring-primary/50');
+                    col.querySelector('.kanban-hint').classList.add('hidden');
+                });
+            }
+
+            function refreshCounts() {
+                columns.forEach(col => {
+                    const n = col.querySelectorAll('.kanban-card').length;
+                    col.querySelector('.kanban-count').textContent = n;
+                    col.querySelector('.kanban-empty').classList.toggle('hidden', n > 0);
+                });
+            }
+
+            function updateCard(card, status) {
+                card.dataset.status = status;
+                const next = nextMap[status];
+                const form = card.querySelector('.kanban-quick');
+                form.classList.toggle('hidden', !next);
+                if (next) {
+                    form.querySelector('input[name="newStatus"]').value = next;
+                    form.querySelector('.kanban-quick-label').textContent = labels[next];
+                }
+            }
+
+            // Kartı sürükleme öncesi konumuna geri koy
+            function revert(evt) {
+                const ref = evt.from.children[evt.oldIndex] || null;
+                evt.from.insertBefore(evt.item, ref);
+                refreshCounts();
+            }
+
+            // Bırakma anında imlecin hangi sütunun üzerinde olduğunu bilmek için son konumu izle.
+            // (Kart yolda uygun bir sütundan geçip uygun olmayan bir sütuna bırakılırsa kütüphane onu
+            // son uygun sütunda bırakır; bunu yakalayıp kartı geri almak gerekir.)
+            let lastPoint = null;
+            function trackPointer(e) {
+                const p = (e.touches && e.touches[0]) || e;
+                if (p && typeof p.clientX === 'number' && (p.clientX || p.clientY)) {
+                    lastPoint = { x: p.clientX, y: p.clientY };
+                }
+            }
+            // capture: true, çünkü SortableJS sütun üzerindeki olayların yayılmasını durdurur.
+            document.addEventListener('dragover', trackPointer, { capture: true });
+            document.addEventListener('pointermove', trackPointer, { capture: true, passive: true });
+            document.addEventListener('touchmove', trackPointer, { capture: true, passive: true });
+
+            async function moveCard(evt) {
+                const card = evt.item;
+                const target = evt.to.dataset.status;
+                const code = card.dataset.code;
+                card.classList.add('opacity-60', 'pointer-events-none');
+                try {
+                    const body = new URLSearchParams({ id: card.dataset.id, newStatus: target });
+                    const res = await fetch(moveUrl, {
+                        method: 'POST',
+                        headers: { 'RequestVerificationToken': token, 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: body,
+                        credentials: 'same-origin'
+                    });
+                    let data = {};
+                    try { data = await res.json(); } catch { /* JSON olmayan yanıt */ }
+                    if (!res.ok || !data.ok) {
+                        revert(evt);
+                        toast(data.error || 'Durum değiştirilemedi. Oturumunuzun süresi dolmuş olabilir; sayfayı yenileyin.', true);
+                        return;
+                    }
+                    updateCard(card, target);
+                    toast(code + ' → ' + labels[target], false);
+                } catch {
+                    revert(evt);
+                    toast('Sunucuya ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin.', true);
+                } finally {
+                    card.classList.remove('opacity-60', 'pointer-events-none');
+                }
+            }
+
+            document.querySelectorAll('.kanban-list').forEach(list => {
+                new Sortable(list, {
+                    group: {
+                        name: 'kanban',
+                        put: (to, from, dragEl) => blockReason(dragEl, to.el.dataset.status) === null
+                    },
+                    draggable: '.kanban-card',
+                    filter: 'a, button, input',
+                    preventOnFilter: false,
+                    sort: false,                // sütun içi sıralama kaydedilmez
+                    animation: 150,
+                    delay: 150,                 // dokunmatik ekranda sayfa kaydırmayı engellememek için
+                    delayOnTouchOnly: true,
+                    ghostClass: 'opacity-30',
+                    chosenClass: 'ring-2',
+                    dragClass: 'shadow-2xl',
+                    scroll: true,
+                    bubbleScroll: true,
+                    onStart: evt => { lastPoint = null; highlightTargets(evt.item); },
+                    // onEnd kaynak sütunda, bırakma tamamlandıktan sonra bir kez çalışır.
+                    onEnd: evt => {
+                        clearHighlights();
+                        refreshCounts();
+                        if (evt.from === evt.to) return;
+
+                        const under = lastPoint && document.elementFromPoint(lastPoint.x, lastPoint.y);
+                        const dropColumn = under && under.closest('.kanban-column');
+                        if (!dropColumn || dropColumn.dataset.status !== evt.to.dataset.status) {
+                            // Kart, bırakıldığı yere değil yolda geçtiği bir sütuna düşmüş: geri al.
+                            revert(evt);
+                            if (dropColumn) {
+                                const reason = blockReason(evt.item, dropColumn.dataset.status);
+                                toast((reason || 'Kart bu sütuna bırakılamaz') + '.', true);
+                            }
+                            return;
+                        }
+                        moveCard(evt);
+                    }
+                });
+            });
+        })();
+    </script>
+}

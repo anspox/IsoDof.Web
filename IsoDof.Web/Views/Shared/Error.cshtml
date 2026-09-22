@@ -1,25 +1,29 @@
 @model ErrorViewModel
 @{
-    ViewData["Title"] = "Hata";
+    var (title, message, icon) = Model.StatusCode switch
+    {
+        404 => ("Sayfa Bulunamadı", "Aradığınız sayfa taşınmış, silinmiş veya hiç var olmamış olabilir.", "search_off"),
+        403 => ("Erişim Engellendi", "Bu sayfayı görüntüleme yetkiniz bulunmuyor.", "block"),
+        429 => ("Çok Fazla İstek", "Kısa sürede çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.", "hourglass_top"),
+        _ => ("Bir Hata Oluştu", "İsteğiniz işlenirken beklenmeyen bir hata oluştu. Sorun devam ederse sistem yöneticisine başvurun.", "error"),
+    };
+    ViewData["Title"] = title;
 }
 
-<h1 class="text-danger">Hata.</h1>
-<h2 class="text-danger">İsteğiniz işlenirken bir hata oluştu.</h2>
+<div class="w-full max-w-md mx-auto p-8 bg-surface-container-low rounded-2xl border border-outline-variant/30 flex flex-col items-center text-center gap-4">
+    <span class="material-symbols-outlined text-5xl text-error">@icon</span>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">@title</h1>
+    <p class="font-body-md text-body-md text-on-surface-variant">@message</p>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>İstek No:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+    @if (Model.ShowRequestId)
+    {
+        <p class="text-xs text-outline">
+            Destek için istek numarası: <code class="font-mono text-on-surface-variant">@Model.RequestId</code>
+        </p>
+    }
 
-<h3>Geliştirme Modu</h3>
-<p>
-    <strong>Development</strong> ortamına geçildiğinde, oluşan hatayla ilgili daha ayrıntılı bilgi gösterilir.
-</p>
-<p>
-    <strong>Development ortamı yayına alınmış uygulamalarda etkinleştirilmemelidir.</strong>
-    İstisnalardan gelen hassas bilgilerin son kullanıcılara gösterilmesine yol açabilir.
-    Yerel hata ayıklama için <strong>ASPNETCORE_ENVIRONMENT</strong> ortam değişkenini <strong>Development</strong>
-    olarak ayarlayıp uygulamayı yeniden başlatarak <strong>Development</strong> ortamını etkinleştirebilirsiniz.
-</p>
+    <a href="~/" class="mt-2 inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-colors">
+        <span class="material-symbols-outlined text-[16px]">home</span>
+        <span>Ana Sayfaya Dön</span>
+    </a>
+</div>

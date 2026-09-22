@@ -27,7 +27,6 @@ public class UserImportResultViewModel
     public int TotalRows { get; set; }
     public int AddedCount { get; set; }
     public int SkippedCount => Results.Count(r => !r.Success);
-    public string DefaultPassword { get; set; } = "";
     public List<UserImportRowResult> Results { get; set; } = new();
     public bool HasRun { get; set; }
 }

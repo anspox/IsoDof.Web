@@ -1,0 +1,113 @@
+/** Tailwind yapılandırması: eskiden _Layout.cshtml içinde CDN ile tarayıcıda çalışıyordu. */
+/** @type {import("tailwindcss").Config} */
+module.exports = {
+    content: [
+        "./Views/**/*.cshtml",
+        "./wwwroot/js/**/*.js",
+        "./Controllers/**/*.cs",
+        "./Models/**/*.cs",
+        "./Services/**/*.cs",
+        "./ViewComponents/**/*.cs"
+    ],
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary-fixed": "#001e2f",
+                        "on-secondary": "#003731",
+                        "error-container": "#93000a",
+                        "tertiary-fixed": "#6ffbbe",
+                        "outline-variant": "#3e4850",
+                        "secondary-fixed-dim": "#4fdbc8",
+                        "surface-dim": "#031427",
+                        "surface": "#031427",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "secondary": "#4fdbc8",
+                        "surface-container-highest": "#26364a",
+                        "primary-fixed-dim": "#89ceff",
+                        "outline": "#88929b",
+                        "on-error": "#690005",
+                        "on-primary-container": "#003751",
+                        "secondary-fixed": "#71f8e4",
+                        "inverse-surface": "#d3e4fe",
+                        "surface-variant": "#26364a",
+                        "tertiary": "#4edea3",
+                        "on-surface": "#d3e4fe",
+                        "on-surface-variant": "#bec8d2",
+                        "primary-fixed": "#c9e6ff",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#2a3a4f",
+                        "on-tertiary-fixed": "#002113",
+                        "on-secondary-fixed-variant": "#005048",
+                        "on-primary": "#00344d",
+                        "inverse-primary": "#006591",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "tertiary-container": "#00b17b",
+                        "on-primary-fixed-variant": "#004c6e",
+                        "secondary-container": "#04b4a2",
+                        "surface-container-low": "#0b1c30",
+                        "inverse-on-surface": "#213145",
+                        "surface-container-high": "#1b2b3f",
+                        "on-tertiary": "#003824",
+                        "surface-container": "#102034",
+                        "surface-container-lowest": "#000f21",
+                        "primary-container": "#0ea5e9",
+                        "on-tertiary-container": "#003b26",
+                        "background": "#031427",
+                        "on-secondary-fixed": "#00201c",
+                        "on-background": "#d3e4fe",
+                        "primary": "#89ceff",
+                        "surface-tint": "#89ceff",
+                        "on-secondary-container": "#003f38"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "space-2xl": "2rem",
+                        "space-lg": "1rem",
+                        "space-xl": "1.5rem",
+                        "space-3xl": "3rem",
+                        "space-md": "0.75rem",
+                        "space-2xs": "0.125rem",
+                        "container-max": "100rem",
+                        "space-sm": "0.5rem",
+                        "gutter-default": "1rem",
+                        "space-xs": "0.25rem"
+                    },
+                    fontFamily: {
+                        "label-sm": ["Inter", "sans-serif"],
+                        "title-md": ["Inter", "sans-serif"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "headline-xl": ["Inter", "sans-serif"],
+                        "code-sm": ["JetBrains Mono", "monospace"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "display-lg": ["Inter", "sans-serif"],
+                        "code-md": ["JetBrains Mono", "monospace"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        sans: ["Inter", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"]
+                    },
+                    fontSize: {
+                        "label-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.04em", "fontWeight": "600" }],
+                        "title-md": ["1.125rem", { "lineHeight": "1.625rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["1.375rem", { "lineHeight": "1.875rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+                        "headline-xl": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "code-sm": ["0.6875rem", { "lineHeight": "1rem", "fontWeight": "500" }],
+                        "label-md": ["0.8125rem", { "lineHeight": "1.125rem", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "display-lg": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+                        "code-md": ["0.8125rem", { "lineHeight": "1.25rem", "fontWeight": "500" }],
+                        "body-sm": ["0.75rem", { "lineHeight": "1.125rem", "fontWeight": "400" }],
+                        "body-md": ["0.875rem", { "lineHeight": "1.375rem", "fontWeight": "400" }],
+                        "body-lg": ["1rem", { "lineHeight": "1.5rem", "fontWeight": "400" }]
+                    }
+                }
+            }
+};

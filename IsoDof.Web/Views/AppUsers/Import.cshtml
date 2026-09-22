@@ -53,9 +53,8 @@
             @if (Model.AddedCount > 0)
             {
                 <div class="text-xs text-on-surface-variant p-3 rounded-lg bg-surface-container border border-white/[0.06]">
-                    Şifresi belirtilmeyen kullanıcılar için varsayılan giriş şifresi:
-                    <strong class="font-mono text-primary">@Model.DefaultPassword</strong>
-                    — kullanıcıların ilk girişte değiştirmesi önerilir.
+                    Şifresi dosyada belirtilmeyen kullanıcılara formda girdiğiniz geçici şifre atandı.
+                    Tüm yeni kullanıcılar ilk girişte kendi şifrelerini belirlemek zorundadır.
                 </div>
             }
 
@@ -109,6 +108,13 @@
                     <input type="file" name="file" accept=".xlsx,.csv,.xlsm" required
                            class="w-full text-xs text-outline file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-surface-container-high file:text-primary hover:file:bg-primary hover:file:text-surface transition-colors cursor-pointer" />
                 </div>
+                <div class="space-y-1.5">
+                    <label for="temporaryPassword" class="text-xs font-medium text-outline uppercase tracking-wider block">Geçici Şifre</label>
+                    <input type="password" id="temporaryPassword" name="temporaryPassword" required autocomplete="new-password"
+                           minlength="@IsoDof.Web.Services.PasswordPolicy.MinLength"
+                           class="w-full h-10 px-3.5 bg-surface-container border border-white/[0.08] text-white placeholder:text-outline/50 rounded-lg text-xs focus:outline-none focus:border-primary/50 transition-colors" />
+                    <p class="text-[11px] text-outline/70">Dosyada şifresi boş olan kullanıcılara atanır. @IsoDof.Web.Services.PasswordPolicy.Description</p>
+                </div>
                 <button type="submit" class="h-9 px-5 rounded-lg bg-primary text-on-primary font-medium text-xs hover:bg-primary-container transition-colors shadow-sm shadow-primary/20 flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-[16px]">upload_file</span>
                     <span>Yükle ve İçe Aktar</span>
@@ -126,7 +132,7 @@
                     <li><strong>Departman</strong> zorunludur; departman adı veya kodu yazılabilir (mevcut olmalı).</li>
                     <li><strong>Rol</strong> boş bırakılırsa "Kullanıcı" atanır. ("Kullanıcı", "Kalite Kontrol", "Admin")</li>
                     <li><strong>Sicil No</strong> isteğe bağlıdır; verilirse benzersiz olmalıdır.</li>
-                    <li><strong>Şifre</strong> boşsa varsayılan şifre <strong class="font-mono text-primary">@IsoDof.Web.Controllers.AppUsersController.DefaultBulkPassword</strong> atanır.</li>
+                    <li><strong>Şifre</strong> boşsa formdaki geçici şifre atanır. Tüm şifreler şifre kuralına uymalıdır ve kullanıcılar ilk girişte şifrelerini değiştirmek zorundadır.</li>
                     <li>Hatalı satırlar atlanır, geçerli satırlar eklenir; sonuçta atlanan satırların listesi gösterilir.</li>
                 </ul>
             </div>

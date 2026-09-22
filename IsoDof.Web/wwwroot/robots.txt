@@ -1,0 +1,3 @@
+# NISO QMS şirket içi bir uygulamadır; arama motorlarında listelenmemelidir.
+User-agent: *
+Disallow: /

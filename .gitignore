@@ -23,3 +23,10 @@ TestResults/
 # User-specific files
 appsettings.Production.json
 appsettings.*.local.json
+
+# Yüklenen dosyalar (web kökü dışında, yedeklenmeli ama repoya girmemeli)
+App_Data/
+IsoDof.Web/wwwroot/uploads/
+
+# Node (Tailwind derlemesi)
+node_modules/

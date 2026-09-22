@@ -56,12 +56,40 @@ public class FileLoggerProvider : ILoggerProvider
         return new FileLogger(categoryName, this);
     }
 
+    /// <summary>Bu günden eski log dosyaları otomatik silinir; disk dolmasını önler.</summary>
+    public const int RetentionDays = 30;
+
+    private DateTime _lastCleanupDate = DateTime.MinValue;
+
+    private void CleanupOldFiles()
+    {
+        if (_lastCleanupDate == DateTime.Today) return;
+        _lastCleanupDate = DateTime.Today;
+
+        var cutoff = DateTime.Today.AddDays(-RetentionDays);
+        foreach (var file in Directory.EnumerateFiles(_logDirectory, "log-*.log"))
+        {
+            try
+            {
+                if (File.GetLastWriteTime(file) < cutoff)
+                {
+                    File.Delete(file);
+                }
+            }
+            catch
+            {
+                // Silinemeyen dosya bir sonraki gün tekrar denenir.
+            }
+        }
+    }
+
     public void WriteEntry(string message)
     {
         lock (_lock)
         {
             try
             {
+                CleanupOldFiles();
                 var fileName = $"log-{DateTime.Now:yyyy-MM-dd}.log";
                 var filePath = Path.Combine(_logDirectory, fileName);
                 File.AppendAllText(filePath, message + Environment.NewLine);

@@ -6,11 +6,14 @@ public class RequestTimingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestTimingMiddleware> _logger;
+    private readonly bool _emitTimingHeaders;
 
-    public RequestTimingMiddleware(RequestDelegate next, ILogger<RequestTimingMiddleware> logger)
+    public RequestTimingMiddleware(RequestDelegate next, ILogger<RequestTimingMiddleware> logger, IWebHostEnvironment env)
     {
         _next = next;
         _logger = logger;
+        // Sunucu süre bilgisi yalnızca geliştirmede tarayıcıya gönderilir; üretimde sadece loglanır.
+        _emitTimingHeaders = env.IsDevelopment();
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -31,7 +34,7 @@ public class RequestTimingMiddleware
         var stopwatch = Stopwatch.StartNew();
 
         // Yanıt başlıkları gönderilmeden hemen önce header'ları ekle
-        context.Response.OnStarting(() =>
+        if (_emitTimingHeaders) context.Response.OnStarting(() =>
         {
             var elapsedMs = stopwatch.Elapsed.TotalMilliseconds;
             context.Response.Headers["X-Execution-Time-Ms"] = elapsedMs.ToString("0.0");

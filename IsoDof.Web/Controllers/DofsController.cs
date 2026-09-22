@@ -53,7 +53,7 @@ public class DofsController : Controller
 
         if (!AllowedTransitions.TryGetValue(existing.Status, out var allowed) || !allowed.Contains(newStatus))
         {
-            error = $"'{existing.Status}' durumundan '{newStatus}' durumuna geçiş yapılamaz.";
+            error = $"'{existing.Status.ToLabel()}' durumundan '{newStatus.ToLabel()}' durumuna geçiş yapılamaz.";
             return false;
         }
 
@@ -304,7 +304,7 @@ public class DofsController : Controller
                     _context.DofAttachments.Add(new DofAttachment
                     {
                         DofId = dof.Id,
-                        FileName = file.FileName,
+                        FileName = Path.GetFileName(file.FileName),
                         StoredFileName = uploadResult.StoredFileName!,
                         UploadedByUserId = CurrentUserId
                     });
@@ -358,6 +358,10 @@ public class DofsController : Controller
         {
             return NotFound();
         }
+        if (!CanAccess(dof))
+        {
+            return RedirectToAction("AccessDenied", "Account");
+        }
         ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", dof.DepartmentId);
         ViewBag.Users = new SelectList(_context.AppUsers.OrderBy(u => u.FullName), "Id", "FullName");
         return View(dof);
@@ -376,6 +380,10 @@ public class DofsController : Controller
         if (existing == null)
         {
             return NotFound();
+        }
+        if (!CanAccess(existing))
+        {
+            return RedirectToAction("AccessDenied", "Account");
         }
 
         if (dof.DueDate.HasValue && dof.DueDate.Value.Date < DateTime.UtcNow.Date)
@@ -529,23 +537,44 @@ public class DofsController : Controller
         }
 
         // Yetki kontrolü
-        if (User.IsInRole("KaliteKontrol"))
+        if (!CanAccess(dof))
         {
-            var deptId = CurrentUserDepartmentId;
-            if (deptId.HasValue && dof.DepartmentId != deptId.Value)
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
-        }
-        else if (!User.IsInRole("Admin"))
-        {
-            if (dof.AssignedToUserId != CurrentUserId && dof.CreatedByUserId != CurrentUserId)
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            return RedirectToAction("AccessDenied", "Account");
         }
 
         return View(dof);
+    }
+
+    private bool CanAccess(Dof dof) => DofAccess.CanAccess(User, dof, CurrentUserId, CurrentUserDepartmentId);
+
+    // --- Dosya eki indirme: ekler web kökü dışında saklanır, yalnızca DÖF'e erişimi olan kullanıcı indirebilir ---
+    [HttpGet]
+    public async Task<IActionResult> Attachment(int id, bool download = false)
+    {
+        var attachment = await _context.DofAttachments
+            .Include(a => a.Dof)
+            .FirstOrDefaultAsync(a => a.Id == id);
+        if (attachment?.Dof == null)
+        {
+            return NotFound();
+        }
+        if (!CanAccess(attachment.Dof))
+        {
+            return RedirectToAction("AccessDenied", "Account");
+        }
+
+        var path = _fileStorage.GetPath("dof-attachments", attachment.StoredFileName);
+        if (path == null)
+        {
+            return NotFound();
+        }
+
+        var contentType = FileStorageService.GetContentType(attachment.StoredFileName);
+        // Görsel ve PDF'ler tarayıcıda açılabilir; diğer türler her zaman indirilir.
+        var inline = !download && (contentType.StartsWith("image/") || contentType == "application/pdf");
+        return inline
+            ? PhysicalFile(path, contentType)
+            : PhysicalFile(path, contentType, attachment.FileName);
     }
 
     [HttpPost]
@@ -557,7 +586,17 @@ public class DofsController : Controller
             return RedirectToAction(nameof(Details), new { id = dofId });
         }
 
-        var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var dof = await _context.Dofs.FindAsync(dofId);
+        if (dof == null)
+        {
+            return NotFound();
+        }
+        if (!CanAccess(dof))
+        {
+            return RedirectToAction("AccessDenied", "Account");
+        }
+
+        var currentUserId = CurrentUserId;
 
         var comment = new DofComment
         {
@@ -569,61 +608,120 @@ public class DofsController : Controller
         _context.DofComments.Add(comment);
         await _context.SaveChangesAsync();
 
-        var dof = await _context.Dofs.FindAsync(dofId);
-        if (dof != null)
-        {
-            await _notifications.NotifyManyAsync(
-                new int?[] { dof.AssignedToUserId, dof.CreatedByUserId }
-                    .Where(uid => uid != currentUserId),
-                $"DÖF #{dof.Id} kaydına yeni yorum eklendi",
-                Url.Action(nameof(Details), "Dofs", new { id = dof.Id }),
-                "chat");
-        }
+        await _notifications.NotifyManyAsync(
+            new int?[] { dof.AssignedToUserId, dof.CreatedByUserId }
+                .Where(uid => uid != currentUserId),
+            $"DÖF #{dof.Id} kaydına yeni yorum eklendi",
+            Url.Action(nameof(Details), "Dofs", new { id = dof.Id }),
+            "chat");
 
         return RedirectToAction(nameof(Details), new { id = dofId });
     }
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> UploadAttachment(int dofId, IFormFile file)
-{
-    var uploadResult = await _fileStorage.SaveAsync(file, "dof-attachments");
-    if (!uploadResult.Success)
-    {
-        TempData["UploadError"] = uploadResult.ErrorMessage;
-        return RedirectToAction(nameof(Details), new { id = dofId });
-    }
 
-    var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-    var attachment = new DofAttachment
-    {
-        DofId = dofId,
-        FileName = file!.FileName,
-        StoredFileName = uploadResult.StoredFileName!,
-        UploadedByUserId = currentUserId
-    };
-
-    _context.DofAttachments.Add(attachment);
-    await _context.SaveChangesAsync();
-
-    return RedirectToAction(nameof(Details), new { id = dofId });
-}
-
-    // --- Hızlı durum aksiyonları (Details sayfasındaki tek tıkla butonlar) ---
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> QuickStatus(int id, DofStatus newStatus)
+    public async Task<IActionResult> UploadAttachment(int dofId, IFormFile file)
+    {
+        var dof = await _context.Dofs.FindAsync(dofId);
+        if (dof == null)
+        {
+            return NotFound();
+        }
+        if (!CanAccess(dof))
+        {
+            return RedirectToAction("AccessDenied", "Account");
+        }
+
+        var uploadResult = await _fileStorage.SaveAsync(file, "dof-attachments");
+        if (!uploadResult.Success)
+        {
+            TempData["UploadError"] = uploadResult.ErrorMessage;
+            return RedirectToAction(nameof(Details), new { id = dofId });
+        }
+
+        var attachment = new DofAttachment
+        {
+            DofId = dofId,
+            FileName = Path.GetFileName(file!.FileName),
+            StoredFileName = uploadResult.StoredFileName!,
+            UploadedByUserId = CurrentUserId
+        };
+
+        _context.DofAttachments.Add(attachment);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction(nameof(Details), new { id = dofId });
+    }
+
+    /// <summary>Kanban panosunun sürükle-bırak için kullandığı izinli geçiş tablosu.</summary>
+    public static IReadOnlyDictionary<DofStatus, DofStatus[]> StatusTransitions => AllowedTransitions;
+
+    // --- Hızlı durum aksiyonları (Details ve Kanban sayfasındaki tek tıkla butonlar) ---
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> QuickStatus(int id, DofStatus newStatus, string? returnUrl = null)
     {
         var dof = await _context.Dofs.Include(d => d.Actions).FirstOrDefaultAsync(d => d.Id == id);
         if (dof == null)
         {
             return NotFound();
         }
+        if (!CanAccess(dof))
+        {
+            return RedirectToAction("AccessDenied", "Account");
+        }
 
-        if (!TryValidateStatusTransition(dof, newStatus, out var error))
+        var error = await ChangeStatusAsync(dof, newStatus, "Hızlı aksiyon ile değiştirildi");
+        if (error != null)
         {
             TempData["ErrorMessage"] = error;
-            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // --- Kanban sürükle-bırak: sayfa yenilenmeden durum değiştirir, sonucu JSON döner ---
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MoveStatus(int id, DofStatus newStatus)
+    {
+        var dof = await _context.Dofs.Include(d => d.Actions).FirstOrDefaultAsync(d => d.Id == id);
+        if (dof == null || dof.IsArchived)
+        {
+            return NotFound(new { ok = false, error = "DÖF kaydı bulunamadı." });
+        }
+        if (!CanAccess(dof))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { ok = false, error = "Bu DÖF kaydının durumunu değiştirme yetkiniz yok." });
+        }
+        if (dof.Status == newStatus)
+        {
+            return Ok(new { ok = true, status = newStatus.ToString() });
+        }
+
+        var error = await ChangeStatusAsync(dof, newStatus, "Kanban panosunda sürükle-bırak ile değiştirildi");
+        if (error != null)
+        {
+            return BadRequest(new { ok = false, error });
+        }
+
+        return Ok(new { ok = true, status = dof.Status.ToString() });
+    }
+
+    /// <summary>
+    /// Durum değişikliğinin tek uygulama noktası: geçiş kurallarını doğrular, kapatma/yeniden açma alanlarını
+    /// günceller, geçmişe kayıt düşer ve ilgilileri bilgilendirir. Hata varsa mesajı döner, yoksa null.
+    /// </summary>
+    private async Task<string?> ChangeStatusAsync(Dof dof, DofStatus newStatus, string historyNote)
+    {
+        if (!TryValidateStatusTransition(dof, newStatus, out var error))
+        {
+            return error;
         }
 
         var oldStatus = dof.Status;
@@ -647,7 +745,7 @@ public async Task<IActionResult> UploadAttachment(int dofId, IFormFile file)
             OldStatus = oldStatus,
             NewStatus = newStatus,
             ChangedByUserId = CurrentUserId,
-            Note = "Hızlı aksiyon ile değiştirildi"
+            Note = historyNote
         });
 
         await _context.SaveChangesAsync();
@@ -655,11 +753,11 @@ public async Task<IActionResult> UploadAttachment(int dofId, IFormFile file)
         await _notifications.NotifyManyAsync(
             new int?[] { dof.AssignedToUserId, dof.CreatedByUserId }
                 .Where(uid => uid != CurrentUserId),
-            $"DÖF #{dof.Id} durumu güncellendi: {oldStatus} → {newStatus}",
+            $"DÖF #{dof.Id} durumu güncellendi: {oldStatus.ToLabel()} → {newStatus.ToLabel()}",
             Url.Action(nameof(Details), "Dofs", new { id = dof.Id }),
             "sync_alt");
 
-        return RedirectToAction(nameof(Details), new { id });
+        return null;
     }
 
     // --- Etkinlik Takibi: kapatılan DÖF'ün alınan önlemin kalıcı olup olmadığının doğrulanması ---
@@ -671,6 +769,10 @@ public async Task<IActionResult> UploadAttachment(int dofId, IFormFile file)
         if (dof == null || dof.Status != DofStatus.Kapatildi)
         {
             return NotFound();
+        }
+        if (!CanAccess(dof))
+        {
+            return RedirectToAction("AccessDenied", "Account");
         }
 
         dof.EffectivenessResult = result;
@@ -697,7 +799,8 @@ public async Task<IActionResult> UploadAttachment(int dofId, IFormFile file)
     public async Task<IActionResult> Kanban(int? departmentId)
     {
         var query = BuildDofQuery(departmentId, null, null, false);
-        var dofs = await query.ToListAsync();
+        // Kartlarda açık faaliyet sayısı gösterilir (açık faaliyeti olan DÖF kapatılamaz).
+        var dofs = await query.Include(d => d.Actions).ToListAsync();
 
         ViewBag.Departments = new SelectList(_context.Departments, "Id", "Name", departmentId);
         ViewBag.DepartmentId = departmentId;

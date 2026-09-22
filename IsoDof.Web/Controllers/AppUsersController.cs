@@ -15,9 +15,6 @@ namespace IsoDof.Web.Controllers;
 [Authorize(Roles = "Admin")]
 public class AppUsersController : Controller
 {
-    // Toplu içe aktarımda şifre verilmeyen kullanıcılar için varsayılan şifre
-    public const string DefaultBulkPassword = "Sirket2026!";
-
     private readonly AppDbContext _context;
     private readonly IUserImportParser _importParser;
 
@@ -50,6 +47,10 @@ public class AppUsersController : Controller
         {
             ModelState.AddModelError("Password", "Şifre alanı zorunludur.");
         }
+        else if (!PasswordPolicy.IsValid(password, out var policyError))
+        {
+            ModelState.AddModelError("Password", policyError!);
+        }
 
         if (appUser.SicilNo != null &&
             await _context.AppUsers.AnyAsync(u => u.SicilNo == appUser.SicilNo))
@@ -61,6 +62,10 @@ public class AppUsersController : Controller
         {
             var hasher = new PasswordHasher<AppUser>();
             appUser.PasswordHash = hasher.HashPassword(appUser, password);
+            // Şifreyi yönetici belirlediği için kullanıcı ilk girişte değiştirmek zorunda.
+            appUser.MustChangePassword = true;
+            appUser.FailedLoginCount = 0;
+            appUser.LockoutEndUtc = null;
 
             _context.AppUsers.Add(appUser);
             await _context.SaveChangesAsync();
@@ -127,14 +132,28 @@ public class AppUsersController : Controller
             ModelState.AddModelError(nameof(appUser.SicilNo), "Bu sicil no başka bir kullanıcıya ait.");
         }
 
+        // Formda bulunmayan güvenlik alanlarını mevcut kayıttan koru.
+        appUser.MustChangePassword = existingUser.MustChangePassword;
+        appUser.FailedLoginCount = existingUser.FailedLoginCount;
+        appUser.LockoutEndUtc = existingUser.LockoutEndUtc;
+
         if (string.IsNullOrWhiteSpace(newPassword))
         {
             appUser.PasswordHash = existingUser.PasswordHash;
+        }
+        else if (!PasswordPolicy.IsValid(newPassword, out var policyError))
+        {
+            appUser.PasswordHash = existingUser.PasswordHash;
+            ModelState.AddModelError("NewPassword", policyError!);
         }
         else
         {
             var hasher = new PasswordHasher<AppUser>();
             appUser.PasswordHash = hasher.HashPassword(appUser, newPassword);
+            // Yönetici şifre sıfırladı: kilidi kaldır, kullanıcı ilk girişte yeni şifre belirlesin.
+            appUser.MustChangePassword = true;
+            appUser.FailedLoginCount = 0;
+            appUser.LockoutEndUtc = null;
         }
 
         if (ModelState.IsValid)
@@ -166,8 +185,15 @@ public class AppUsersController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(20 * 1024 * 1024)]
-    public async Task<IActionResult> Import(IFormFile? file)
+    public async Task<IActionResult> Import(IFormFile? file, string? temporaryPassword)
     {
+        // Dosyada şifresi boş olan satırlar bu geçici şifreyi alır; herkes ilk girişte değiştirmek zorunda.
+        if (!PasswordPolicy.IsValid(temporaryPassword, out var tempPolicyError))
+        {
+            ModelState.AddModelError("", "Geçici şifre: " + tempPolicyError);
+            return View(new UserImportResultViewModel());
+        }
+
         if (file == null || file.Length == 0)
         {
             ModelState.AddModelError("", "Lütfen bir dosya seçin.");
@@ -196,7 +222,6 @@ public class AppUsersController : Controller
         var vm = new UserImportResultViewModel
         {
             HasRun = true,
-            DefaultPassword = DefaultBulkPassword,
             TotalRows = rows.Count
         };
 
@@ -264,16 +289,24 @@ public class AppUsersController : Controller
                 if (!seenSicils.Add(sk)) { res.Error = $"Dosyada sicil no tekrar ediyor: {sicil}"; vm.Results.Add(res); continue; }
             }
 
+            var rowPassword = string.IsNullOrWhiteSpace(row.Password) ? temporaryPassword! : row.Password.Trim();
+            if (!PasswordPolicy.IsValid(rowPassword, out var rowPolicyError))
+            {
+                res.Error = "Şifre kurala uymuyor. " + rowPolicyError;
+                vm.Results.Add(res);
+                continue;
+            }
+
             var user = new AppUser
             {
                 FullName = row.FullName.Trim(),
                 Email = email,
                 DepartmentId = dept.Id,
                 Role = ParseRole(row.Role),
-                SicilNo = sicil
+                SicilNo = sicil,
+                MustChangePassword = true
             };
-            user.PasswordHash = hasher.HashPassword(user,
-                string.IsNullOrWhiteSpace(row.Password) ? DefaultBulkPassword : row.Password.Trim());
+            user.PasswordHash = hasher.HashPassword(user, rowPassword);
 
             toAdd.Add(user);
             res.Success = true;

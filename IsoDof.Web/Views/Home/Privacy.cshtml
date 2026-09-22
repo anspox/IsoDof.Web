@@ -1,6 +1,146 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
-    ViewData["Title"] = "Gizlilik Politikası";
+    ViewData["Title"] = "KVKK Aydınlatma Metni";
+    var kvkk = Configuration.GetSection("Kvkk");
+    var controllerName = kvkk["DataControllerName"];
+    var address = kvkk["Address"];
+    var contactEmail = kvkk["ContactEmail"];
+    var kep = kvkk["KepAddress"];
+    var updatedAt = kvkk["LastUpdated"];
+    var isConfigured = !string.IsNullOrWhiteSpace(controllerName) && !string.IsNullOrWhiteSpace(contactEmail);
+    var sentryEnabled = !string.IsNullOrWhiteSpace(Configuration["Sentry:Dsn"]);
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Bu sayfayı sitenizin gizlilik politikasını açıklamak için kullanın.</p>
+<article class="w-full max-w-3xl mx-auto bg-surface-container-low border border-white/[0.05] rounded-2xl p-6 sm:p-10 flex flex-col gap-6 text-body-md text-on-surface-variant leading-relaxed">
+    <header class="flex flex-col gap-2">
+        <h1 class="font-headline-xl text-headline-xl text-white">Kişisel Verilerin Korunması Aydınlatma Metni</h1>
+        <p class="text-body-sm text-outline">
+            6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) madde 10 uyarınca hazırlanmıştır.
+            @if (!string.IsNullOrWhiteSpace(updatedAt))
+            {
+                <span>Son güncelleme: @updatedAt</span>
+            }
+        </p>
+    </header>
+
+    @if (!isConfigured)
+    {
+        <div role="alert" class="p-3 rounded-lg bg-error-container/20 border border-error/30 text-error text-xs">
+            Veri sorumlusu bilgileri henüz tanımlanmamış. Sistem yöneticisi, uygulama ayarlarındaki "Kvkk" bölümünü doldurmalıdır.
+        </div>
+    }
+
+    <section class="flex flex-col gap-2">
+        <h2 class="font-title-md text-title-md text-white">1. Veri Sorumlusu</h2>
+        <p>
+            Bu sistemde işlenen kişisel verilerin veri sorumlusu
+            <strong class="text-on-surface">@(string.IsNullOrWhiteSpace(controllerName) ? "şirketimizdir" : controllerName)</strong>.
+            @if (!string.IsNullOrWhiteSpace(address))
+            {
+                <span>Adres: @address.</span>
+            }
+        </p>
+    </section>
+
+    <section class="flex flex-col gap-2">
+        <h2 class="font-title-md text-title-md text-white">2. İşlenen Kişisel Veriler</h2>
+        <ul class="list-disc pl-5 flex flex-col gap-1">
+            <li><strong class="text-on-surface">Kimlik ve iletişim:</strong> ad soyad, kurumsal e-posta adresi, sicil numarası.</li>
+            <li><strong class="text-on-surface">Çalışan bilgisi:</strong> departman ve sistemdeki rol.</li>
+            <li><strong class="text-on-surface">İşlem bilgisi:</strong> açtığınız veya size atanan DÖF kayıtları, yazdığınız yorumlar, faaliyet adımları, yüklediğiniz dosyalar ve bu kayıtlardaki durum değişikliği geçmişi.</li>
+            <li><strong class="text-on-surface">İşlem güvenliği:</strong> şifrenizin geri döndürülemez özeti (şifrenin kendisi saklanmaz), başarısız giriş denemeleri, IP adresi ve sistem kayıtları (loglar).</li>
+        </ul>
+    </section>
+
+    <section class="flex flex-col gap-2">
+        <h2 class="font-title-md text-title-md text-white">3. İşleme Amaçları</h2>
+        <ul class="list-disc pl-5 flex flex-col gap-1">
+            <li>ISO 9001 kalite yönetim sistemi kapsamında uygunsuzlukların kaydı, düzeltici ve önleyici faaliyetlerin yürütülmesi ve takibi,</li>
+            <li>DÖF atama, hatırlatma ve durum bildirimlerinin e-posta ve sistem içi bildirimle iletilmesi,</li>
+            <li>Denetim ve raporlama süreçlerinin yürütülmesi,</li>
+            <li>Sisteme yetkisiz erişimin önlenmesi ve bilgi güvenliğinin sağlanması.</li>
+        </ul>
+    </section>
+
+    <section class="flex flex-col gap-2">
+        <h2 class="font-title-md text-title-md text-white">4. Hukuki Sebepler ve Toplama Yöntemi</h2>
+        <p>
+            Kişisel verileriniz; iş sözleşmesinin kurulması ve ifası (KVKK md. 5/2-c), veri sorumlusunun hukuki yükümlülüğünü
+            yerine getirmesi (md. 5/2-ç) ve temel hak ve özgürlüklerinize zarar vermemek kaydıyla veri sorumlusunun meşru menfaati
+            (md. 5/2-f) hukuki sebeplerine dayanılarak işlenir. Veriler, insan kaynakları kayıtlarından aktarılarak veya sizin bu
+            sistemde girdiğiniz bilgilerden elektronik ortamda, otomatik yollarla toplanır.
+        </p>
+    </section>
+
+    <section class="flex flex-col gap-2">
+        <h2 class="font-title-md text-title-md text-white">5. Aktarım</h2>
+        <p>
+            Kişisel verileriniz yalnızca yukarıdaki amaçlarla ve gerektiği ölçüde; şirket içindeki yetkili birimlerle,
+            e-posta bildirimleri için kullanılan e-posta hizmet sağlayıcısıyla ve talep halinde yetkili kamu kurumlarıyla paylaşılır.
+            @if (sentryEnabled)
+            {
+                <span>
+                    Uygulama hatalarının tespiti için hata kayıtları, kişisel veri içermeyecek şekilde yapılandırılmış olarak
+                    yurt dışında bulunan hata izleme hizmet sağlayıcısına (Sentry) aktarılır (KVKK md. 9).
+                </span>
+            }
+        </p>
+    </section>
+
+    <section class="flex flex-col gap-2">
+        <h2 class="font-title-md text-title-md text-white">6. Saklama Süresi</h2>
+        <p>
+            DÖF kayıtları, kalite yönetim sistemi kayıtlarının saklanmasına ilişkin şirket politikası ve mevzuatta öngörülen süre
+            boyunca saklanır. Sistem logları 30 gün sonra otomatik olarak silinir. Süresi dolan veriler silinir, yok edilir veya
+            anonim hale getirilir.
+        </p>
+    </section>
+
+    <section class="flex flex-col gap-2">
+        <h2 class="font-title-md text-title-md text-white">7. Çerezler</h2>
+        <p>
+            Bu sistem yalnızca çalışması için zorunlu çerezleri kullanır: oturumunuzu açık tutan kimlik doğrulama çerezi ve formları
+            sahte isteklere karşı koruyan güvenlik çerezi. Reklam, analiz veya takip çerezi kullanılmaz. Yazı tipleri ve tüm
+            dosyalar kendi sunucumuzdan yüklenir.
+        </p>
+    </section>
+
+    <section class="flex flex-col gap-2">
+        <h2 class="font-title-md text-title-md text-white">8. Haklarınız</h2>
+        <p>KVKK madde 11 uyarınca veri sorumlusuna başvurarak;</p>
+        <ul class="list-disc pl-5 flex flex-col gap-1">
+            <li>kişisel verilerinizin işlenip işlenmediğini öğrenme ve işlenmişse buna ilişkin bilgi talep etme,</li>
+            <li>işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme,</li>
+            <li>yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme,</li>
+            <li>eksik veya yanlış işlenmişse düzeltilmesini, KVKK md. 7 şartları oluştuğunda silinmesini veya yok edilmesini isteme ve bu işlemlerin aktarılan üçüncü kişilere bildirilmesini isteme,</li>
+            <li>münhasıran otomatik sistemlerle analiz edilmesi sonucu aleyhinize bir sonuç çıkmasına itiraz etme,</li>
+            <li>kanuna aykırı işleme nedeniyle zarara uğramanız halinde zararın giderilmesini talep etme</li>
+        </ul>
+        <p>haklarına sahipsiniz.</p>
+    </section>
+
+    <section class="flex flex-col gap-2">
+        <h2 class="font-title-md text-title-md text-white">9. Başvuru</h2>
+        <p>
+            Başvurularınızı Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ'e uygun olarak
+            @if (!string.IsNullOrWhiteSpace(contactEmail))
+            {
+                <a href="mailto:@contactEmail" class="text-primary hover:underline">@contactEmail</a>
+                <span>adresine e-posta ile,</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(kep))
+            {
+                <span>@kep KEP adresine,</span>
+            }
+            yazılı olarak veya şirket içi yetkili birime iletebilirsiniz. Başvurunuz en geç 30 gün içinde ücretsiz olarak sonuçlandırılır.
+        </p>
+    </section>
+
+    @if (!(User.Identity?.IsAuthenticated ?? false))
+    {
+        <a asp-controller="Account" asp-action="Login" class="self-start inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Giriş sayfasına dön</span>
+        </a>
+    }
+</article>

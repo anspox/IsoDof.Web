@@ -28,7 +28,7 @@ public class SmtpEmailService : IEmailService
         // Eğer SMTP şifresi veya sunucu ayarı yapılmamışsa Gmail'e bağlanıp 30 saniye bekletme!
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(password))
         {
-            _logger.LogInformation("SMTP şifresi yapılandırılmadığı için e-posta gönderimi simüle edildi: {ToEmail} - {Subject}", toEmail, subject);
+            _logger.LogWarning("SMTP ayarları (Host/Password) yapılandırılmadığı için e-posta gönderimi simüle edildi: {ToEmail} - {Subject}", toEmail, subject);
             return;
         }
 

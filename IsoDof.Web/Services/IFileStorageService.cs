@@ -13,4 +13,7 @@ public class FileUploadResult
 public interface IFileStorageService
 {
     Task<FileUploadResult> SaveAsync(IFormFile? file, string subFolder);
+
+    /// <summary>Kayıtlı dosyanın tam yolunu döner; dosya yoksa null.</summary>
+    string? GetPath(string subFolder, string storedFileName);
 }

@@ -1,0 +1,19 @@
+@import "./fonts.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Eskiden _Layout.cshtml içindeki <style> bloğundaydı. */
+::-webkit-scrollbar { display: none; }
+body { overscroll-behavior: none; }
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+/* Koyu tema kullanıldığından, tarayıcının native form kontrollerini (select
+   açılır listesi, checkbox vb.) de koyu şemayla çizmesini sağlıyoruz.
+   Aksi halde Firefox gibi tarayıcılarda select popup'ı açık renk metni
+   varsayılan beyaz zeminle çizer ve yazılar görünmez hale gelir. */
+html, select, option {
+    color-scheme: dark;
+}

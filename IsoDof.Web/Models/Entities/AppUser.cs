@@ -38,6 +38,15 @@ public class AppUser
 
     public string PasswordHash { get; set; } = string.Empty;
 
+    /// <summary>Yönetici tarafından atanan geçici şifrelerde true olur; kullanıcı ilk girişte şifresini değiştirmek zorundadır.</summary>
+    public bool MustChangePassword { get; set; }
+
+    /// <summary>Art arda başarısız giriş denemesi sayısı (başarılı girişte sıfırlanır).</summary>
+    public int FailedLoginCount { get; set; }
+
+    /// <summary>Hesap kilitliyse kilidin açılacağı zaman (UTC).</summary>
+    public DateTime? LockoutEndUtc { get; set; }
+
     [Display(Name = "Rol")]
     public UserRole Role { get; set; } = UserRole.Kullanici;    
 

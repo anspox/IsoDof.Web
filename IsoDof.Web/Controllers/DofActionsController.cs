@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using IsoDof.Web.Data;
 using IsoDof.Web.Models.Entities;
+using IsoDof.Web.Services;
 
 namespace IsoDof.Web.Controllers;
 
@@ -39,6 +40,15 @@ public class DofActionsController : Controller
 
         var userId = CurrentUserId;
         return query.Where(d => d.CreatedByUserId == userId);
+    }
+
+    /// <summary>Faaliyetin bağlı olduğu DÖF'e erişimi olan kullanıcılar faaliyeti yönetebilir.</summary>
+    private async Task<bool> CanManageDofAsync(int dofId)
+    {
+        var dof = await _context.Dofs.AsNoTracking().FirstOrDefaultAsync(d => d.Id == dofId);
+        if (dof == null) return false;
+        var deptId = (await _context.AppUsers.AsNoTracking().FirstOrDefaultAsync(u => u.Id == CurrentUserId))?.DepartmentId;
+        return DofAccess.CanAccess(User, dof, CurrentUserId, deptId);
     }
 
     public async Task<IActionResult> Index()
@@ -162,6 +172,11 @@ public class DofActionsController : Controller
         var action = await _context.DofActions.FindAsync(id);
         if (action != null)
         {
+            // Faaliyetin sorumlusu veya DÖF'e erişimi olan kullanıcı tamamlayabilir.
+            if (action.ResponsibleUserId != CurrentUserId && !await CanManageDofAsync(action.DofId))
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
             action.CompletedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
@@ -171,14 +186,30 @@ public class DofActionsController : Controller
 
         return RedirectToAction(nameof(Index));
     }
-        public async Task<IActionResult> Edit(int id)
+
+    // Düzenleme ekranındaki DÖF listesi: kullanıcının kapsamındaki kayıtlar + faaliyetin mevcut DÖF'ü
+    private async Task<SelectList> EditableDofsSelectListAsync(int currentDofId)
+    {
+        var currentUser = await _context.AppUsers.FindAsync(CurrentUserId);
+        var dofs = await AssignableDofsQuery(currentUser)
+            .Union(_context.Dofs.Where(d => d.Id == currentDofId))
+            .OrderByDescending(d => d.Id)
+            .ToListAsync();
+        return new SelectList(dofs, "Id", "Title", currentDofId);
+    }
+
+    public async Task<IActionResult> Edit(int id)
     {
         var dofAction = await _context.DofActions.FindAsync(id);
         if (dofAction == null)
         {
             return NotFound();
         }
-        ViewBag.Dofs = new SelectList(_context.Dofs, "Id", "Title", dofAction.DofId);
+        if (!await CanManageDofAsync(dofAction.DofId))
+        {
+            return RedirectToAction("AccessDenied", "Account");
+        }
+        ViewBag.Dofs = await EditableDofsSelectListAsync(dofAction.DofId);
         ViewBag.Users = new SelectList(_context.AppUsers, "Id", "FullName", dofAction.ResponsibleUserId);
         return View(dofAction);
     }
@@ -192,13 +223,25 @@ public class DofActionsController : Controller
             return NotFound();
         }
 
+        var existing = await _context.DofActions.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+        // Hem mevcut hem de (değiştirildiyse) hedef DÖF kullanıcının kapsamında olmalı.
+        if (!await CanManageDofAsync(existing.DofId) ||
+            (dofAction.DofId != existing.DofId && !await CanManageDofAsync(dofAction.DofId)))
+        {
+            return RedirectToAction("AccessDenied", "Account");
+        }
+
         if (ModelState.IsValid)
         {
             _context.Update(dofAction);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
-        ViewBag.Dofs = new SelectList(_context.Dofs, "Id", "Title", dofAction.DofId);
+        ViewBag.Dofs = await EditableDofsSelectListAsync(existing.DofId);
         ViewBag.Users = new SelectList(_context.AppUsers, "Id", "FullName", dofAction.ResponsibleUserId);
         return View(dofAction);
     }
@@ -212,6 +255,10 @@ public class DofActionsController : Controller
         {
             return NotFound();
         }
+        if (!await CanManageDofAsync(dofAction.DofId))
+        {
+            return RedirectToAction("AccessDenied", "Account");
+        }
         return View(dofAction);
     }
 
@@ -222,6 +269,10 @@ public class DofActionsController : Controller
         var dofAction = await _context.DofActions.FindAsync(id);
         if (dofAction != null)
         {
+            if (!await CanManageDofAsync(dofAction.DofId))
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
             _context.DofActions.Remove(dofAction);
             await _context.SaveChangesAsync();
         }

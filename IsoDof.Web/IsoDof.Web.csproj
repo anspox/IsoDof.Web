@@ -26,9 +26,17 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Sentry.AspNetCore" Version="6.11.1" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="System.Text.Json" Version="10.0.12" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+  </ItemGroup>
+
+  <!-- Geliştirme dosyaları yayın paketine girmez; derlenmiş CSS (wwwroot/css/app.min.css) repoda tutulur. -->
+  <ItemGroup>
+    <Content Update="package.json;package-lock.json;appsettings.Production.example.json" CopyToPublishDirectory="Never" />
+    <None Remove="node_modules/**" />
+    <Content Remove="node_modules/**" />
   </ItemGroup>
 
 </Project>
